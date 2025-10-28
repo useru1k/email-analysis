@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+email-validator
+dnspython
+requests
+tldextract
+python-magic   # optional: for MIME detection on attachments (libmagic required)
+python-dotenv

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberMail Analyzer - Advanced Email Security Analysis</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header fade-in">
+            <h1><i class="fas fa-shield-alt"></i> CyberMail Analyzer</h1>
+            <p class="subtitle">Advanced Email Security Analysis & Threat Detection</p>
+        </header>
+
+        <!-- Main Analysis Form -->
+        <div class="card fade-in">
+            <form id="analysisForm" action="/analyze" method="post" enctype="multipart/form-data">
+                <!-- File Upload Section -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-upload"></i> Upload Email File
+                    </label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                        <h3>Drop your .eml file here</h3>
+                        <p class="text-muted">or click to browse files</p>
+                        <input type="file" id="emlfile" name="emlfile" accept=".eml" style="display: none;">
+                    </div>
+                    <div id="fileInfo" class="mt-2" style="display: none;">
+                        <span class="status-indicator success"></span>
+                        <span id="fileName"></span>
+                        <button type="button" id="removeFile" class="btn btn-secondary" style="margin-left: 1rem; padding: 0.5rem 1rem;">Remove</button>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="text-center mb-3">
+                    <span class="text-muted">OR</span>
+                </div>
+
+                <!-- Raw Text Input -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-code"></i> Paste Raw Email Content
+                    </label>
+                    <textarea 
+                        name="rawtext" 
+                        class="form-control" 
+                        rows="12" 
+                        placeholder="Paste your raw email content here (headers + body)..."
+                        style="font-family: 'Courier New', monospace; font-size: 0.9rem;"
+                    ></textarea>
+                </div>
+
+                <!-- Analysis Mode Selection -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-cogs"></i> Analysis Mode
+                    </label>
+                    <div class="mode-selector">
+                        <label class="mode-option active" for="online">
+                            <input type="radio" name="mode" value="online" id="online" checked>
+                            <i class="fas fa-globe mode-icon"></i>
+                            <h4>Online Analysis</h4>
+                            <p class="text-muted">Full OSINT checks with VirusTotal & AbuseIPDB</p>
+                            <div class="mt-2">
+                                <span class="status-indicator success"></span>
+                                <small>Recommended</small>
+                            </div>
+                        </label>
+                        <label class="mode-option" for="offline">
+                            <input type="radio" name="mode" value="offline" id="offline">
+                            <i class="fas fa-laptop mode-icon"></i>
+                            <h4>Offline Analysis</h4>
+                            <p class="text-muted">Local analysis only,Offline Mode</p>
+                            <div class="mt-2">
+                                <span class="status-indicator muted"></span>
+                                <small>Basic</small>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary" id="analyzeBtn">
+                        <i class="fas fa-search"></i>
+                        <span>Analyze Email</span>
+                        <div class="loading" id="loadingSpinner" style="display: none;"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Features Section -->
+        <div class="card fade-in">
+            <h3 class="text-center mb-4">
+                <i class="fas fa-star"></i> Analysis Features
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                <div class="text-center">
+                    <i class="fas fa-shield-virus" style="font-size: 2rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h4>Threat Detection</h4>
+                    <p class="text-muted">Advanced threat scoring and malicious content detection</p>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-map-marker-alt" style="font-size: 2rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                    <h4>IP Geolocation</h4>
+                    <p class="text-muted">Track email origin and routing through IP analysis</p>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-link" style="font-size: 2rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                    <h4>Link Analysis</h4>
+                    <p class="text-muted">Expand shortened URLs and check for malicious links</p>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-file-alt" style="font-size: 2rem; color: var(--warning-color); margin-bottom: 1rem;"></i>
+                    <h4>Attachment Scan</h4>
+                    <p class="text-muted">Analyze email attachments for potential threats</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File upload handling
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('emlfile');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const removeFileBtn = document.getElementById('removeFile');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // Mode selection
+        const modeOptions = document.querySelectorAll('.mode-option');
+        modeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                modeOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+            });
+        });
+
+        // File upload area click
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('dragover');
+        });
+
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('dragover');
+        });
+
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                fileName.textContent = file.name;
+                fileInfo.style.display = 'block';
+                fileUploadArea.style.display = 'none';
+            }
+        }
+
+        // Remove file
+        removeFileBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+            fileUploadArea.style.display = 'block';
+        });
+
+        // Form submission
+        document.getElementById('analysisForm').addEventListener('submit', (e) => {
+            const file = fileInput.files[0];
+            const rawText = document.querySelector('textarea[name="rawtext"]').value.trim();
+            
+            if (!file && !rawText) {
+                e.preventDefault();
+                alert('Please upload a file or paste email content.');
+                return;
+            }
+
+            // Show loading state
+            analyzeBtn.disabled = true;
+            analyzeBtn.querySelector('span').style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+        });
+
+        // Add some interactive effects
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
