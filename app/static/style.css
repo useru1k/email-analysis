@@ -340,13 +340,39 @@ body::before {
   width: 100%;
   background: var(--bg-card);
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   margin-bottom: 2rem;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .data-table table {
   width: 100%;
+  min-width: 800px; /* Minimum width to prevent squishing */
   border-collapse: collapse;
+}
+
+/* Responsive table wrapper */
+@media (max-width: 768px) {
+  .data-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .data-table table {
+    min-width: 800px; /* Ensure table doesn't get too narrow */
+  }
+  
+  .data-table td {
+    max-width: 200px;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+  
+  .data-table td:last-child {
+    max-width: 250px;
+    min-width: 150px;
+  }
 }
 
 .data-table th {
@@ -356,12 +382,57 @@ body::before {
   text-align: left;
   font-weight: 600;
   border-bottom: 2px solid var(--border-color);
+  white-space: nowrap; /* Keep header text on one line */
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .data-table td {
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-secondary);
+  word-wrap: break-word;
+  word-break: break-all;
+  max-width: 300px;
+  overflow-wrap: break-word;
+}
+
+.data-table td:first-child {
+  max-width: 50px;
+  text-align: center;
+}
+
+/* URL cells should handle long links better */
+.data-table td a {
+  display: block;
+  max-width: 100%;
+  word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  line-height: 1.6;
+  padding: 0.25rem 0;
+  transition: color 0.2s ease;
+}
+
+.data-table td a:hover {
+  text-decoration: underline;
+  color: var(--primary-color) !important;
+}
+
+/* Domain Intel column - allow more width and better wrapping */
+.data-table td:last-child {
+  max-width: 400px;
+  min-width: 200px;
+}
+
+.data-table td:last-child small {
+  display: block;
+  word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
 }
 
 .data-table tr:hover {

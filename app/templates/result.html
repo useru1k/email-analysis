@@ -76,6 +76,11 @@
                         <th><i class="fas fa-shield-check"></i> Authentication</th>
                         <td>
                             {% if result.headers['Authentication-Results'] %}
+                                <div class="mb-1">
+                                    <span class="threat-badge {{ 'safe' if result.auth.spf == 'pass' else 'suspicious' if result.auth.spf in ['softfail','neutral'] else 'malicious' if result.auth.spf == 'fail' else '' }}">SPF: {{ result.auth.spf|upper }}</span>
+                                    <span class="threat-badge {{ 'safe' if result.auth.dkim == 'pass' else 'malicious' if result.auth.dkim == 'fail' else 'suspicious' if result.auth.dkim in ['softfail','neutral'] else '' }}">DKIM: {{ result.auth.dkim|upper }}</span>
+                                    <span class="threat-badge {{ 'safe' if result.auth.dmarc == 'pass' else 'malicious' if result.auth.dmarc == 'fail' else 'suspicious' if result.auth.dmarc in ['softfail','neutral'] else '' }}">DMARC: {{ result.auth.dmarc|upper }}</span>
+                                </div>
                                 <pre style="white-space: pre-wrap; font-size: 0.8rem; background: var(--bg-darker); padding: 1rem; border-radius: 4px; margin: 0;">{{ result.headers['Authentication-Results'] }}</pre>
                             {% else %}
                                 <span class="text-muted">No authentication data</span>
@@ -84,6 +89,14 @@
                     </tr>
                 </table>
             </div>
+            {% if result.threat_score > 60 and result.header_issues and result.header_issues|length > 0 %}
+            <div class="mt-2">
+                <strong>Header issues:</strong>
+                {% for issue in result.header_issues %}
+                    <span class="threat-badge malicious">{{ issue }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
 
         <!-- IP Analysis -->
@@ -155,32 +168,69 @@
                             <th><i class="fas fa-expand-arrows-alt"></i> Final URL</th>
                             <th><i class="fas fa-compress"></i> Shortened</th>
                             <th><i class="fas fa-shield-virus"></i> Status</th>
+                            <th><i class="fas fa-info-circle"></i> Domain Intel</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for l in result.links %}
                         <tr>
                             <td><strong>{{ loop.index }}</strong></td>
-                            <td>
-                                <a href="{{ l.original }}" target="_blank" style="color: var(--primary-color); text-decoration: none;">
-                                    {{ l.original[:50] }}{{ '...' if l.original|length > 50 else '' }}
+                            <td style="max-width: 300px;">
+                                <a href="{{ l.original }}" target="_blank" 
+                                   style="color: var(--primary-color); text-decoration: none; word-wrap: break-word; word-break: break-all; display: block;"
+                                   title="{{ l.original }}">
+                                    {{ l.original }}
                                 </a>
                             </td>
-                            <td>
-                                <a href="{{ l.final }}" target="_blank" style="color: var(--secondary-color); text-decoration: none;">
-                                    {{ l.final[:50] }}{{ '...' if l.final|length > 50 else '' }}
+                            <td style="max-width: 300px;">
+                                <a href="{{ l.final }}" target="_blank" 
+                                   style="color: var(--secondary-color); text-decoration: none; word-wrap: break-word; word-break: break-all; display: block;"
+                                   title="{{ l.final }}">
+                                    {{ l.final }}
                                 </a>
                             </td>
-                            <td>
+                            <td style="max-width: 100px; text-align: center;">
                                 {% if l.shortened %}
                                     <span class="threat-badge suspicious">YES</span>
                                 {% else %}
                                     <span class="threat-badge safe">NO</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td style="max-width: 120px;">
                                 <span class="status-indicator {{ 'warning' if l.shortened else 'success' }}"></span>
                                 {{ 'Suspicious' if l.shortened else 'Normal' }}
+                            </td>
+                            <td style="max-width: 400px; min-width: 200px;">
+                                {% set intel = result.link_intel[loop.index0] %}
+                                {% if intel and intel.domain %}
+                                    <div class="mb-1" style="word-wrap: break-word; word-break: break-all;"><strong>{{ intel.domain }}</strong></div>
+                                    {% if intel.whois %}
+                                        <div class="mb-1" style="word-wrap: break-word; word-break: break-all;"><small>Registrar: {{ intel.whois.registrar or 'Unknown' }}</small></div>
+                                        <div class="mb-1"><small>Age: {{ intel.whois.age_days if intel.whois.age_days is not none else 'N/A' }} days</small></div>
+                                    {% endif %}
+                                    {% if intel.dns %}
+                                        <div class="mb-1" style="word-wrap: break-word; word-break: break-all;">
+                                            <small>MX: 
+                                                {% if intel.dns.mx and intel.dns.mx|length > 0 %}
+                                                    {{ intel.dns.mx | join(', ') }}
+                                                {% else %}
+                                                    None
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div class="mb-1" style="word-wrap: break-word; word-break: break-all;">
+                                            <small>SOA: 
+                                                {% if intel.dns.soa and intel.dns.soa|length > 0 %}
+                                                    {{ intel.dns.soa | join(', ') }}
+                                                {% else %}
+                                                    None
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -215,22 +265,91 @@
                             <td>{{ a.content_type or 'Unknown' }}</td>
                             <td>{{ "{:,}".format(a.size) }} bytes</td>
                             <td>
-                                {% set risk_level = 'suspicious' %}
-                                {% if a.content_type %}
-                                    {% set safe_extensions = ['exe', 'bat', 'cmd', 'scr', 'pif'] %}
-                                    {% set is_risky = false %}
-                                    {% for ext in safe_extensions %}
-                                        {% if ext in a.content_type.lower() %}
-                                            {% set is_risky = true %}
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% if not is_risky %}
-                                        {% set risk_level = 'safe' %}
-                                    {% endif %}
+                                {% if a.risky %}
+                                    <span class="threat-badge suspicious">RISK</span>
+                                {% else %}
+                                    <span class="threat-badge safe">SAFE</span>
                                 {% endif %}
-                                <span class="threat-badge {{ risk_level }}">
-                                    {{ 'SAFE' if risk_level == 'safe' else 'RISK' }}
-                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Attachment MalwareBazaar Check Results -->
+        {% if result.attachment_checks is defined and result.attachment_checks|length > 0 %}
+        <div class="card fade-in slide-in-right">
+            <h3><i class="fas fa-bug"></i> Attachment MalwareBazaar Check</h3>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Filename</th>
+                            <th>Status</th>
+                            <th>SHA-256</th>
+                            <th>Malware Info</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ac in result.attachment_checks %}
+                        <tr>
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td>{{ ac.filename }}</td>
+                            <td>
+                                {% if ac.status == 'malware' %}
+                                    <span class="threat-badge malicious">MALWARE</span>
+                                {% elif ac.status == 'safe' %}
+                                    <span class="threat-badge safe">SAFE</span>
+                                {% else %}
+                                    <span class="threat-badge suspicious">ERROR</span>
+                                {% endif %}
+                            </td>
+                            <td><code style="background: var(--bg-darker); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ ac.sha256 }}</code></td>
+                            <td>
+                                {% if ac.status == 'malware' and ac.info %}
+                                    <pre style="white-space: pre-wrap; font-size: 0.8rem; background: var(--bg-darker); padding: 1rem; border-radius: 4px; margin: 0;">{{ ac.info }}</pre>
+                                {% elif ac.status == 'safe' %}
+                                    <span class="text-muted">No match in MalwareBazaar</span>
+                                {% else %}
+                                    <span class="text-muted">{{ ac.info }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- VirusTotal URL Results -->
+        {% if result.vt_results and result.vt_results|length > 0 %}
+        <div class="card fade-in slide-in-left">
+            <h3><i class="fas fa-shield-virus"></i> VirusTotal URL Checks</h3>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>URL</th>
+                            <th>Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in result.vt_results %}
+                        <tr>
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td>
+                                <a href="{{ v.url }}" target="_blank" style="color: var(--secondary-color); text-decoration: none;">
+                                    {{ v.url[:60] }}{{ '...' if v.url|length > 60 else '' }}
+                                </a>
+                            </td>
+                            <td>
+                                <pre style="white-space: pre-wrap; font-size: 0.8rem; background: var(--bg-darker); padding: 1rem; border-radius: 4px; margin: 0;">{{ v.vt }}</pre>
                             </td>
                         </tr>
                         {% endfor %}
@@ -261,6 +380,9 @@
             <div style="background: var(--bg-darker); padding: 1.5rem; border-radius: 8px;">
                 <pre style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 0.9rem; margin: 0; color: var(--text-secondary);">{{ result.breakdown }}</pre>
             </div>
+            <div class="mt-2">
+                <canvas id="heuristicsChart" height="120"></canvas>
+            </div>
         </div>
 
         <!-- Action Buttons -->
@@ -270,6 +392,9 @@
             </a>
             <button onclick="window.print()" class="btn btn-secondary">
                 <i class="fas fa-print"></i> Print Report
+            </button>
+            <button id="downloadJson" class="btn btn-secondary">
+                <i class="fas fa-file-download"></i> Download JSON
             </button>
         </div>
     </div>
@@ -290,12 +415,9 @@
             });
         }, observerOptions);
 
-        // Observe all cards for scroll animations
+        // Observe all cards for scroll animations (do not hide by default)
         document.querySelectorAll('.card').forEach(card => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(card);
+            try { observer.observe(card); } catch (e) {}
         });
 
         // Add hover effects to interactive elements
@@ -328,6 +450,48 @@
                     progressBar.style.width = '{{ result.threat_score }}%';
                 }, 500);
             }
+            // Download JSON button
+            const btn = document.getElementById('downloadJson');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const data = {{ result | tojson | safe }};
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'analysis-result.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+            }
+
+            // Heuristics chart
+            try {
+                const ctx = document.getElementById('heuristicsChart');
+                if (ctx && window.Chart) {
+                    const breakdown = {{ result.breakdown | tojson | safe }};
+                    const counts = {
+                        auth: (breakdown.spf === 'fail' ? 1 : 0) + (breakdown.dkim === 'fail' ? 1 : 0) + (breakdown.dmarc === 'fail' ? 1 : 0),
+                        blacklists: (breakdown.blacklist_hits ? breakdown.blacklist_hits.length : 0),
+                        attachments: (breakdown.risky_attachments ? breakdown.risky_attachments.length : 0),
+                        links: (breakdown.risky_links || 0)
+                    };
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Auth', 'Blacklists', 'Attachments', 'Links'],
+                            datasets: [{
+                                label: 'Risk components',
+                                data: [counts.auth, counts.blacklists, counts.attachments, counts.links],
+                                backgroundColor: ['#ff4444', '#ffaa00', '#ffaa00', '#ff4444']
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { display: false } } }
+                    });
+                }
+            } catch (e) {}
         });
     </script>
 </body>
