@@ -22,6 +22,86 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
 - **Header Analysis**: Extraction and validation of email headers
 - **Dual Mode Operation**: Online (with API integrations) and Offline modes
 
+## Installation
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package installer)
+- Git (for cloning the repository)
+
+### Step-by-Step Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/useru1k/email-analysis.git
+   cd email-analysis
+   ```
+
+2. **Create a virtual environment** (recommended)
+   
+   On Windows:
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+   
+   On Linux/Mac:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r app/requirement.txt
+   ```
+
+4. **Configure environment variables** (Optional, for online mode)
+   
+   Create a `.env` file in the root directory:
+   ```env
+   VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
+   ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
+   IPAPI_URL=http://ip-api.com/json/
+   ```
+   
+   **Note**: 
+   - VirusTotal API key is optional but recommended for URL scanning
+   - AbuseIPDB API key is optional but recommended for IP reputation checking
+   - You can use the application in offline mode without API keys
+
+## Running the Application
+
+### Start the Server
+
+1. **Activate the virtual environment** (if not already activated)
+   
+   On Windows:
+   ```bash
+   venv\Scripts\activate
+   ```
+   
+   On Linux/Mac:
+   ```bash
+   source venv/bin/activate
+   ```
+
+2. **Run the FastAPI server**
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+   
+   Or with specific host and port:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+3. **Access the application**
+   - Open your web browser
+   - Navigate to: `http://localhost:8000`
+   - You should see the Email Analysis interface
+
 ## Threat Score Calculation
 
 The threat score is calculated on a scale of 0-100, where higher scores indicate greater threat levels. The scoring system evaluates multiple security factors:
