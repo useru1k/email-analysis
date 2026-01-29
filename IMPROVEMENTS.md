@@ -3,6 +3,19 @@
 ## Overview
 This document outlines proposed improvements to enhance the email analysis system with additional security features and detection capabilities.
 
+
+### A. Go beyond basic header checks
+- Most tools stop at SPF/DKIM/DMARC. You can stand out by adding:
+- Header anomaly detection
+- Mismatch between From, Return-Path, and Reply-To
+- Received chain inconsistencies (geo jumps, private IPs)
+- X-Mailer fingerprinting (known phishing kits)
+- Mail client spoofing
+- Display name vs actual email mismatch
+- Homoglyph attacks (paypaI.com vs paypal.com)
+- 👉 Bonus: Assign weighted scores per anomaly, not just pass/fail.
+
+
 ## Proposed Improvements
 
 ### 1. **Email Body Content Analysis** ⭐ HIGH PRIORITY
@@ -67,4 +80,5 @@ This document outlines proposed improvements to enhance the email analysis syste
 - Maintain backward compatibility
 - Ensure performance remains acceptable
 - Add comprehensive error handling
+
 - Include unit tests for new features
