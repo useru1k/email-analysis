@@ -1,4 +1,6 @@
-# app/main.py
+# app/main.py author: @thebluecapture_team
+
+## loading necessary libraries
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -13,15 +15,18 @@ from .utils import (
 )
 import asyncio
 
+## load environment variables
 load_dotenv()
-VIRUSTOTAL = os.getenv("VIRUSTOTAL_API_KEY", "")
-ABUSEIPDB = os.getenv("ABUSEIPDB_API_KEY", "")
+VIRUSTOTAL = os.getenv("VIRUSTOTAL_API_KEY", "") ## replace your VirusTotal API key
+ABUSEIPDB = os.getenv("ABUSEIPDB_API_KEY", "") ## replace your AbuseIPDB API key
 IPAPI_URL = os.getenv("IPAPI_URL", "http://ip-api.com/json/")
 
+## FastAPI setup and setup templates/static files as live
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+## FastAPI starting area -> index page load
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
