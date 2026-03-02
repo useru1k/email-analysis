@@ -77,9 +77,9 @@
                         <td>
                             {% if result.headers['Authentication-Results'] %}
                                 <div class="mb-1">
-                                    <span class="threat-badge {{ 'safe' if result.auth.spf == 'pass' else 'suspicious' if result.auth.spf in ['softfail','neutral'] else 'malicious' if result.auth.spf == 'fail' else '' }}">SPF: {{ result.auth.spf|upper }}</span>
-                                    <span class="threat-badge {{ 'safe' if result.auth.dkim == 'pass' else 'malicious' if result.auth.dkim == 'fail' else 'suspicious' if result.auth.dkim in ['softfail','neutral'] else '' }}">DKIM: {{ result.auth.dkim|upper }}</span>
-                                    <span class="threat-badge {{ 'safe' if result.auth.dmarc == 'pass' else 'malicious' if result.auth.dmarc == 'fail' else 'suspicious' if result.auth.dmarc in ['softfail','neutral'] else '' }}">DMARC: {{ result.auth.dmarc|upper }}</span>
+                                    <span class="threat-badge {{ 'safe' if result.auth.get('spf') == 'pass' else 'suspicious' if result.auth.get('spf') in ['softfail','neutral'] else 'malicious' if result.auth.get('spf') == 'fail' else '' }}">SPF: {{ result.auth.get('spf','N/A')|upper }}</span>
+                                    <span class="threat-badge {{ 'safe' if result.auth.get('dkim') == 'pass' else 'malicious' if result.auth.get('dkim') == 'fail' else 'suspicious' if result.auth.get('dkim') in ['softfail','neutral'] else '' }}">DKIM: {{ result.auth.get('dkim','N/A')|upper }}</span>
+                                    <span class="threat-badge {{ 'safe' if result.auth.get('dmarc') == 'pass' else 'malicious' if result.auth.get('dmarc') == 'fail' else 'suspicious' if result.auth.get('dmarc') in ['softfail','neutral'] else '' }}">DMARC: {{ result.auth.get('dmarc','N/A')|upper }}</span>
                                 </div>
                                 <pre style="white-space: pre-wrap; font-size: 0.8rem; background: var(--bg-darker); padding: 1rem; border-radius: 4px; margin: 0;">{{ result.headers['Authentication-Results'] }}</pre>
                             {% else %}
@@ -89,11 +89,11 @@
                     </tr>
                 </table>
             </div>
-            {% if result.threat_score > 60 and result.header_issues and result.header_issues|length > 0 %}
+            {% if result.header_issues and result.header_issues | length > 0 %}
             <div class="mt-2">
                 <strong>Header issues:</strong>
                 {% for issue in result.header_issues %}
-                    <span class="threat-badge malicious">{{ issue }}</span>
+                    <span class="threat-badge suspicious">{{ issue }}</span>
                 {% endfor %}
             </div>
             {% endif %}
@@ -168,7 +168,7 @@
                             <th><i class="fas fa-expand-arrows-alt"></i> Final URL</th>
                             <th><i class="fas fa-compress"></i> Shortened</th>
                             <th><i class="fas fa-shield-virus"></i> Status</th>
-                            <th><i class="fas fa-info-circle"></i> Domain Intel</th>
+                            <th><i class="fas fa-info-circle"></i> Domain</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -200,33 +200,12 @@
                                 <span class="status-indicator {{ 'warning' if l.shortened else 'success' }}"></span>
                                 {{ 'Suspicious' if l.shortened else 'Normal' }}
                             </td>
-                            <td style="max-width: 400px; min-width: 200px;">
+                            <td>
                                 {% set intel = result.link_intel[loop.index0] %}
-                                {% if intel and intel.domain %}
-                                    <div class="mb-1" style="word-wrap: break-word; word-break: break-all;"><strong>{{ intel.domain }}</strong></div>
-                                    {% if intel.whois %}
-                                        <div class="mb-1" style="word-wrap: break-word; word-break: break-all;"><small>Registrar: {{ intel.whois.registrar or 'Unknown' }}</small></div>
-                                        <div class="mb-1"><small>Age: {{ intel.whois.age_days if intel.whois.age_days is not none else 'N/A' }} days</small></div>
-                                    {% endif %}
-                                    {% if intel.dns %}
-                                        <div class="mb-1" style="word-wrap: break-word; word-break: break-all;">
-                                            <small>MX: 
-                                                {% if intel.dns.mx and intel.dns.mx|length > 0 %}
-                                                    {{ intel.dns.mx | join(', ') }}
-                                                {% else %}
-                                                    None
-                                                {% endif %}
-                                            </small>
-                                        </div>
-                                        <div class="mb-1" style="word-wrap: break-word; word-break: break-all;">
-                                            <small>SOA: 
-                                                {% if intel.dns.soa and intel.dns.soa|length > 0 %}
-                                                    {{ intel.dns.soa | join(', ') }}
-                                                {% else %}
-                                                    None
-                                                {% endif %}
-                                            </small>
-                                        </div>
+                                {% if intel.domain %}
+                                    <div><strong>{{ intel.domain }}</strong></div>
+                                    {% if intel.whois and intel.whois.creation_date %}
+                                        <small>Created: {{ intel.whois.creation_date }}</small>
                                     {% endif %}
                                 {% else %}
                                     <span class="text-muted">N/A</span>

@@ -1,0 +1,32 @@
+from typing import Optional
+
+from pydantic import AnyHttpUrl, Field
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    """Configuration/settings loaded from environment or .env file."""
+
+    # API keys
+    virustotal_api_key: Optional[str] = Field("", env="VIRUSTOTAL_API_KEY")
+    abuseipdb_api_key: Optional[str] = Field("", env="ABUSEIPDB_API_KEY")
+
+    # External service endpoints
+    ipapi_url: AnyHttpUrl = Field("http://ip-api.com/json/", env="IPAPI_URL")
+
+    # operational flags
+    environment: str = Field("development", env="ENVIRONMENT")
+    max_upload_size: int = Field(5 * 1024 * 1024, env="MAX_UPLOAD_SIZE")  # 5MB limit
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+# create a singleton instance that can be imported elsewhere
+settings = Settings()  
+
+
+def get_settings() -> Settings:
+    """FastAPI dependency for retrieving application settings."""
+    return settings
