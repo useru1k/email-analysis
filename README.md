@@ -75,19 +75,7 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
 
 ### Start the Server
 
-1. **Activate the virtual environment** (if not already activated)
-   
-   On Windows:
-   ```bash
-   venv\Scripts\activate
-   ```
-   
-   On Linux/Mac:
-   ```bash
-   source venv/bin/activate
-   ```
-
-2. **Run the FastAPI server**
+**Run the FastAPI server**
    ```bash
    uvicorn app.main:app --reload
    ```
@@ -97,10 +85,9 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-3. **Access the application**
+**Access the application**
    - Open your web browser
    - Navigate to: `http://localhost:8000`
-   - You should see the Email Analysis interface
 
 ## Threat Score Calculation
 
@@ -191,3 +178,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Disclaimer
 
 This tool is for security analysis and educational purposes only. Always verify results through multiple sources and exercise caution when handling potentially malicious emails.
+
