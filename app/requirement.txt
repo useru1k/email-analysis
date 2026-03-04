@@ -4,8 +4,13 @@ jinja2
 python-multipart
 email-validator
 dnspython
+httpx
 requests
+pydantic
+pydantic-settings
 tldextract
-python-magic   # optional: for MIME detection on attachments (libmagic required)
+python-whois
+# python-magic   # optional: for MIME detection on attachments (libmagic required)
 python-dotenv
 yara-python
+pytest

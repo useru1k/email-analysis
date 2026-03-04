@@ -14,7 +14,7 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
   - Shortened URL expansion
   - VirusTotal integration for URL scanning
   - Suspicious link detection
-  - Domain intelligence (WHOIS, DNS records)
+  - Domain intelligence (WHOIS, DNS records) using `tldextract`, `python-whois` and `dnspython`
 - **Attachment Analysis**:
   - Risky file type detection
   - MalwareBazaar integration for malware detection
@@ -73,6 +73,16 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
 
 ## Running the Application
 
+### Running Tests
+
+A small pytest suite is included to exercise core service functions.
+
+```bash
+pip install pytest  # or use your environment's dependency manager
+pytest -q
+```
+
+
 ### Start the Server
 
 **Run the FastAPI server**
@@ -124,8 +134,15 @@ The threat score is calculated on a scale of 0-100, where higher scores indicate
 email-analysis/
 ├── app/
 │   ├── __pycache__/
-│   ├── main.py              # FastAPI application and routes
-│   ├── utils.py             # Core analysis functions and threat scoring
+│   ├── main.py              # FastAPI application and routes (thin, orchestrates services)
+│   ├── config.py            # application configuration and settings
+│   ├── services/            # business logic modules (parsers, analysis, scoring)
+│   │   ├── parser.py
+│   │   ├── ip_analysis.py
+│   │   ├── url_analysis.py
+│   │   ├── attachment_analysis.py
+│   │   ├── auth_analysis.py
+│   │   └── threat_scoring.py
 │   ├── requirement.txt      # Python dependencies
 │   ├── static/
 │   │   └── style.css        # Application styles
@@ -151,11 +168,11 @@ email-analysis/
 
 - **VirusTotal**: URL and domain reputation checking
 - **AbuseIPDB**: IP address reputation and abuse reporting
-- **MalwareBazaar**: Malware hash database lookup
 - **ip-api.com**: IP geolocation service
-- **whois.vu**: Domain WHOIS information
+- **Whois/DNS**: local lookups using `python-whois` and `dnspython`
 
 ## Usage Examples
+
 
 ### Analyzing an Email File
 

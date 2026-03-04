@@ -32,6 +32,12 @@ pip-wheel-metadata/
 .DS_Store
 Thumbs.db
 
+# Local test scripts
+test_header.py
+
+# optionally ignore sample emails if not needed
+# sample/*.eml
+
 # Logs
 *.log
 
