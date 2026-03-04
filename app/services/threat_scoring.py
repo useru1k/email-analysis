@@ -34,6 +34,19 @@ def compute_threat_score(
     if risky_attachments:
         score += 25
         details["risky_attachments"] = [a.get("filename") for a in risky_attachments]
+    # attachments flagged by VirusTotal
+    vt_malicious: list[str] = []
+    for a in attachments:
+        vt = a.get("vt")
+        if vt and isinstance(vt, dict):
+            stats = vt.get("data", {}).get("attributes", {}).get("last_analysis_stats", {})
+            # count any positive or suspicious hits as a red flag
+            if stats.get("malicious", 0) > 0 or stats.get("suspicious", 0) > 0:
+                vt_malicious.append(a.get("filename"))
+    if vt_malicious:
+        # significant penalty for attachments that VT has detected
+        score += 30
+        details["vt_attachments"] = vt_malicious
     # links
     if links_risky_count > 0:
         score += min(25, links_risky_count * 8)

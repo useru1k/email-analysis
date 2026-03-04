@@ -12,7 +12,7 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
   - IP reputation scoring
 - **URL Analysis**:
   - Shortened URL expansion
-  - VirusTotal integration for URL scanning
+  - VirusTotal integration for URL and file hash scanning
   - Suspicious link detection
   - Domain intelligence (WHOIS, DNS records) using `tldextract`, `python-whois` and `dnspython`
 - **Attachment Analysis**:
@@ -67,7 +67,7 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
    ```
    
    **Note**: 
-   - VirusTotal API key is optional but recommended for URL scanning
+   - VirusTotal API key is optional but recommended for URL and file hash scanning
    - AbuseIPDB API key is optional but recommended for IP reputation checking
    - You can use the application in offline mode without API keys
 
@@ -122,7 +122,7 @@ The threat score is calculated on a scale of 0-100, where higher scores indicate
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `VIRUSTOTAL_API_KEY` | VirusTotal API key for URL scanning | Yes | Empty |
+| `VIRUSTOTAL_API_KEY` | VirusTotal API key for URL and file scanning (hash lookups) | Yes | Empty |
 | `ABUSEIPDB_API_KEY` | AbuseIPDB API key for IP reputation checking | No | Empty |
 | `IPAPI_URL` | IP geolocation API endpoint | No | `http://ip-api.com/json/` |
 
@@ -131,7 +131,7 @@ The threat score is calculated on a scale of 0-100, where higher scores indicate
 - **Online Mode**: 
   - Expands shortened URLs
   - Checks IPs against AbuseIPDB
-  - Scans URLs with VirusTotal
+  - Scans URLs and attachment hashes with VirusTotal
   - Performs WHOIS and DNS lookups
   - Requires API keys for full functionality
 

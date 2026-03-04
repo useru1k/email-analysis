@@ -16,6 +16,7 @@ from app.services import (
     parse_auth_results,
     compute_threat_score,
     domain_intelligence,
+    virustotal_file_check,
 )
 
 SAMPLE_EML = """From: test@example.com
@@ -50,6 +51,7 @@ def test_attachments_and_hash():
     atts = extract_attachments(m)
     assert len(atts) == 1
     assert atts[0]["risky"]
+    assert atts[0]["vt"] is None
     assert compute_sha256(b"data") == hashlib.sha256(b"data").hexdigest()
 
 
@@ -66,6 +68,41 @@ def test_auth_parse_and_score():
     score, breakdown = compute_threat_score(details, ["hit"], [{"risky": True}], 2)
     assert score > 0
     assert "blacklist_hits" in breakdown
+
+
+def test_threat_score_considers_vt():
+    # attachments flagged by VT should increase the score
+    vt_blob = {"data": {"attributes": {"last_analysis_stats": {"malicious": 1}}}}
+    score, breakdown = compute_threat_score({}, [], [{"risky": False, "vt": vt_blob, "filename": "bad.exe"}], 0)
+    assert score >= 30
+    assert breakdown.get("vt_attachments") == ["bad.exe"]
+
+
+
+@pytest.mark.asyncio
+async def test_virustotal_file_check(monkeypatch):
+    # simulate a successful VT response without hitting the network
+    class DummyResp:
+        status_code = 200
+        def json(self):
+            return {"fake": "data"}
+
+    class DummyClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        async def get(self, url, headers=None):
+            return DummyResp()
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
+    monkeypatch.setattr("app.services.attachment_analysis.httpx.AsyncClient", DummyClient)
+    class DummySettings:
+        virustotal_api_key = "key"
+
+    res = await virustotal_file_check("abcd", DummySettings())
+    assert res == {"fake": "data"}
 
 
 def test_domain_intel():

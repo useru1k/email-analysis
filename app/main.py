@@ -28,6 +28,7 @@ from .services import (
     is_shortened,
     expand_short_url,
     virustotal_url_check,
+    virustotal_file_check,
     check_ips,
     parse_auth_results,
     compute_threat_score,
@@ -95,6 +96,13 @@ async def analyze(
     links = extract_links_from_body(msg)
     attachments = extract_attachments(msg)
 
+    # run VirusTotal on attachments if we're online and have a key
+    if mode == "online" and settings.virustotal_api_key and attachments:
+        vt_file_tasks = [virustotal_file_check(att["sha256"], settings) for att in attachments]
+        vt_file_res = await asyncio.gather(*vt_file_tasks, return_exceptions=True)
+        for idx, vt in enumerate(vt_file_res):
+            attachments[idx]["vt"] = vt if not isinstance(vt, Exception) else None
+
     # URL expansion and heuristics
     expanded_links: List[Dict[str, Any]] = []
     risky_link_count = 0
@@ -153,7 +161,12 @@ async def analyze(
     auth_details = parse_auth_results(headers.get("Authentication-Results", ""))
 
     # compute threat score
-    score, breakdown = compute_threat_score(auth_details, blacklist_hits, attachments, risky_link_count)
+    score, breakdown = compute_threat_score(
+        auth_details,
+        blacklist_hits,
+        attachments,
+        risky_link_count,
+    )
 
     result = {
         "headers": headers,
