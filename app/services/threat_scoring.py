@@ -16,13 +16,16 @@ def compute_threat_score(
 
     # authentication
     if auth_details:
-        if auth_details.get("spf") == "fail":
+        spf = auth_details.get("spf")
+        if spf in ("fail", "missing"):
             score += 20
-        elif auth_details.get("spf") == "softfail":
+        elif spf == "softfail":
             score += 10
-        if auth_details.get("dkim") == "fail":
+        dkim = auth_details.get("dkim")
+        if dkim in ("fail", "missing"):
             score += 20
-        if auth_details.get("dmarc") == "fail":
+        dmarc = auth_details.get("dmarc")
+        if dmarc in ("fail", "missing"):
             score += 20
         details.update(auth_details)
     # blacklists

@@ -158,7 +158,7 @@ async def analyze(
         link_intel = [{} for _ in expanded_links]
 
     # authentication parse
-    auth_details = parse_auth_results(headers.get("Authentication-Results", ""))
+    auth_details = parse_auth_results(msg)
 
     # compute threat score
     score, breakdown = compute_threat_score(

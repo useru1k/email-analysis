@@ -2,6 +2,7 @@
 import pytest
 import hashlib
 import asyncio
+import email.message
 from app.services import (
     parse_email,
     extract_basic_headers,
@@ -62,7 +63,10 @@ def test_flag_risky():
 
 def test_auth_parse_and_score():
     auth = "spf=pass dkim=fail dmarc=none"
-    details = parse_auth_results(auth)
+    msg = email.message.EmailMessage()
+    msg["Authentication-Results"] = auth
+    msg["From"] = "test@example.com"
+    details = parse_auth_results(msg)
     assert details["spf"] == "pass"
     assert details["dkim"] == "fail"
     score, breakdown = compute_threat_score(details, ["hit"], [{"risky": True}], 2)
