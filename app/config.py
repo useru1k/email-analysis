@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     environment: str = Field("development", env="ENVIRONMENT")
     max_upload_size: int = Field(5 * 1024 * 1024, env="MAX_UPLOAD_SIZE")  # 5MB limit
 
+    # local caching
+    # a JSON file storing previous VirusTotal results to avoid repeated API queries
+    hash_cache_path: str = Field("hash_cache.json", env="HASH_CACHE_PATH")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

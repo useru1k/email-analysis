@@ -8,6 +8,8 @@ from typing import Any, Dict, Optional
 
 import httpx
 
+from .cache import get_cached_hash, set_cached_hash
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,20 +28,35 @@ def compute_sha256(data: bytes) -> str:
 
 
 async def virustotal_file_check(sha256: str, settings: Any) -> Optional[Dict[str, Any]]:
-    """Query VirusTotal for a file report by SHA256 hash.
+    """Query VirusTotal for a file report by SHA256 hash, using a local cache.
 
-    Returns the parsed JSON response or ``None`` on failure.  The caller should
-    only invoke this when an API key is available (``settings.virustotal_api_key``).
+    If a cache file is configured (`settings.hash_cache_path`) the cache is
+    consulted first.  A cached record is returned immediately and the network
+    is not contacted.  On a cache miss the function performs the HTTP request
+    and stores any successful response in the cache for future lookups.
+
+    Returns the parsed JSON response or ``None`` on failure or when no API key is
+    supplied.  Callers should only invoke this when an API key is available.
     """
     if not getattr(settings, "virustotal_api_key", None):
         return None
+
+    cache_path = getattr(settings, "hash_cache_path", "hash_cache.json")
+    cached = get_cached_hash(sha256, cache_path)
+    if cached is not None:
+        logger.debug("Cache hit for %s", sha256)
+        return cached
+
     headers = {"x-apikey": settings.virustotal_api_key}
     url = f"https://www.virustotal.com/api/v3/files/{sha256}"
     try:
         async with httpx.AsyncClient(timeout=12.0) as client:
             resp = await client.get(url, headers=headers)
             if resp.status_code == 200:
-                return resp.json()
+                data = resp.json()
+                # store successful response
+                set_cached_hash(sha256, data, cache_path)
+                return data
             logger.debug("VirusTotal file check returned %s for %s", resp.status_code, sha256)
     except Exception as exc:
         logger.debug("VirusTotal file check exception for %s: %s", sha256, exc)

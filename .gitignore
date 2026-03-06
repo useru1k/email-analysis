@@ -43,3 +43,6 @@ test_header.py
 
 # Samples and data (optional)
 # sample/
+
+# local cache for file hashes
+hash_cache.json

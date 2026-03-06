@@ -19,6 +19,7 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
   - Risky file type detection
   - MalwareBazaar integration for malware detection
   - SHA-256 hash calculation
+  - **Local hash cache** to store previous VirusTotal results (speeds repeated scans)
 - **Header Analysis**: Extraction and validation of email headers
 - **Dual Mode Operation**: Online (with API integrations) and Offline modes
 
@@ -125,6 +126,7 @@ The threat score is calculated on a scale of 0-100, where higher scores indicate
 | `VIRUSTOTAL_API_KEY` | VirusTotal API key for URL and file scanning (hash lookups) | Yes | Empty |
 | `ABUSEIPDB_API_KEY` | AbuseIPDB API key for IP reputation checking | No | Empty |
 | `IPAPI_URL` | IP geolocation API endpoint | No | `http://ip-api.com/json/` |
+| `HASH_CACHE_PATH` | File path to store/retrieve cached hash reports | No | `hash_cache.json` |
 
 ### Analysis Modes
 
