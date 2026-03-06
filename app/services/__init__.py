@@ -9,7 +9,8 @@ makes unit testing easier.
 from .parser import parse_email, extract_basic_headers, extract_received_ips, extract_links_from_body, extract_attachments, check_header_issues
 from .ip_analysis import geolocate_ip, abuseipdb_check, check_ips
 from .url_analysis import is_shortened, expand_short_url, virustotal_url_check, extract_urls_from_text, domain_intelligence
-from .attachment_analysis import flag_attachment_risky, AttachmentRisk
+from .attachment_analysis import virustotal_file_check
+from .attachment_analysis import flag_attachment_risky, AttachmentRisk, compute_sha256
 from .auth_analysis import parse_auth_results
 from .threat_scoring import compute_threat_score
 
@@ -19,6 +20,7 @@ __all__ = [
     "extract_received_ips",
     "extract_links_from_body",
     "extract_attachments",
+    "virustotal_file_check",
     "geolocate_ip",
     "abuseipdb_check",
     "check_ips",
@@ -28,6 +30,7 @@ __all__ = [
     "extract_urls_from_text",
     "flag_attachment_risky",
     "AttachmentRisk",
+    "compute_sha256",
     "parse_auth_results",
     "compute_threat_score",
 ]

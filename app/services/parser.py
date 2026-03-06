@@ -90,6 +90,7 @@ def extract_attachments(msg: email.message.EmailMessage) -> List[Dict]:
     """Return metadata about attachments in the message.  
 
     Adds SHA-256 and a risk flag so callers don't need to do second passes.
+    A ``vt`` key is included for later VirusTotal lookup results.
     """
     attachments: List[Dict] = []
     for part in msg.walk():
@@ -105,6 +106,8 @@ def extract_attachments(msg: email.message.EmailMessage) -> List[Dict]:
                 "extension": ext,
                 "sha256": compute_sha256(payload),
                 "risky": flag_attachment_risky(ext, part.get_content_type()),
+                # placeholder for VirusTotal result
+                "vt": None,
             })
     return attachments
 

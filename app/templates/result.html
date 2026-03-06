@@ -231,7 +231,9 @@
                             <th><i class="fas fa-file"></i> Filename</th>
                             <th><i class="fas fa-tag"></i> Type</th>
                             <th><i class="fas fa-weight-hanging"></i> Size</th>
+                            <th><i class="fas fa-hash"></i> SHA-256</th>
                             <th><i class="fas fa-shield-alt"></i> Risk</th>
+                            <th><i class="fas fa-virus"></i> VT hits</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -244,10 +246,20 @@
                             <td>{{ a.content_type or 'Unknown' }}</td>
                             <td>{{ "{:,}".format(a.size) }} bytes</td>
                             <td>
+                                <code style="background: var(--bg-darker); padding: 0.25rem 0.5rem; border-radius: 4px; font-size:0.8rem;">{{ a.sha256 }}</code>
+                            </td>
+                            <td>
                                 {% if a.risky %}
                                     <span class="threat-badge suspicious">RISK</span>
                                 {% else %}
                                     <span class="threat-badge safe">SAFE</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if a.vt %}
+                                    <span class="text-muted">{{ a.vt.data.attributes.last_analysis_stats.malicious + a.vt.data.attributes.last_analysis_stats.suspicious }} hits</span>
+                                {% else %}
+                                    <span class="text-muted">n/a</span>
                                 {% endif %}
                             </td>
                         </tr>

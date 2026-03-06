@@ -16,13 +16,16 @@ def compute_threat_score(
 
     # authentication
     if auth_details:
-        if auth_details.get("spf") == "fail":
+        spf = auth_details.get("spf")
+        if spf in ("fail", "missing"):
             score += 20
-        elif auth_details.get("spf") == "softfail":
+        elif spf == "softfail":
             score += 10
-        if auth_details.get("dkim") == "fail":
+        dkim = auth_details.get("dkim")
+        if dkim in ("fail", "missing"):
             score += 20
-        if auth_details.get("dmarc") == "fail":
+        dmarc = auth_details.get("dmarc")
+        if dmarc in ("fail", "missing"):
             score += 20
         details.update(auth_details)
     # blacklists
@@ -34,6 +37,19 @@ def compute_threat_score(
     if risky_attachments:
         score += 25
         details["risky_attachments"] = [a.get("filename") for a in risky_attachments]
+    # attachments flagged by VirusTotal
+    vt_malicious: list[str] = []
+    for a in attachments:
+        vt = a.get("vt")
+        if vt and isinstance(vt, dict):
+            stats = vt.get("data", {}).get("attributes", {}).get("last_analysis_stats", {})
+            # count any positive or suspicious hits as a red flag
+            if stats.get("malicious", 0) > 0 or stats.get("suspicious", 0) > 0:
+                vt_malicious.append(a.get("filename"))
+    if vt_malicious:
+        # significant penalty for attachments that VT has detected
+        score += 30
+        details["vt_attachments"] = vt_malicious
     # links
     if links_risky_count > 0:
         score += min(25, links_risky_count * 8)
