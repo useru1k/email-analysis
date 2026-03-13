@@ -119,19 +119,43 @@ def check_header_issues(msg: email.message.EmailMessage) -> List[str]:
     later.
     """
     issues: List[str] = []
+
     # missing DKIM signature may indicate unauthenticated mail
     if not msg.get("DKIM-Signature"):
         issues.append("No DKIM-Signature header present")
+
+    # missing Message-ID makes tracking/correlation harder and is often used in spam
+    if not msg.get("Message-ID"):
+        issues.append("No Message-ID header present")
+
     # common anti-spoofing: From domain vs Return-Path domain mismatch
     from_hdr = msg.get("From", "")
     return_path = msg.get("Return-Path", "")
-    if from_hdr and return_path:
+    reply_to = msg.get("Reply-To", "")
+
+    def _parse_addr(hdr: str) -> str:
         try:
             import email.utils
-            _, from_addr = email.utils.parseaddr(from_hdr)
-            _, return_addr = email.utils.parseaddr(return_path)
-            if from_addr and return_addr and from_addr.split("@")[-1].lower() != return_addr.split("@")[-1].lower():
-                issues.append("From domain differs from Return-Path domain")
+            _, addr = email.utils.parseaddr(hdr)
+            return addr or ""
         except Exception:
-            pass
+            return ""
+
+    from_addr = _parse_addr(from_hdr)
+    return_addr = _parse_addr(return_path)
+    reply_to_addr = _parse_addr(reply_to)
+
+    def _domain(addr: str) -> str:
+        parts = addr.split("@")
+        return parts[-1].lower() if len(parts) == 2 else ""
+
+    if from_addr and return_addr and _domain(from_addr) != _domain(return_addr):
+        issues.append("From domain differs from Return-Path domain")
+
+    if from_addr and reply_to_addr:
+        if from_addr.lower() != reply_to_addr.lower():
+            issues.append("Reply-To differs from From")
+        if _domain(from_addr) and _domain(reply_to_addr) and _domain(from_addr) != _domain(reply_to_addr):
+            issues.append("Reply-To domain differs from From domain")
+
     return issues

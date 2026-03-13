@@ -267,6 +267,24 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Malware Reports for Flagged Attachments -->
+            {% for a in result.attachments %}
+                {% if a.malware_reports %}
+                <div class="malware-reports-section">
+                    <h4><i class="fas fa-external-link-alt"></i> Additional Reports for {{ a.filename }}</h4>
+                    <ul class="reports-list">
+                        {% for report in a.malware_reports %}
+                        <li>
+                            <a href="{{ report.link }}" target="_blank" rel="noopener noreferrer">
+                                {{ report.title }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            {% endfor %}
         </div>
         {% endif %}
 
@@ -368,11 +386,53 @@
         <!-- Threat Breakdown -->
         <div class="card fade-in slide-in-right">
             <h3><i class="fas fa-chart-pie"></i> Threat Analysis Breakdown</h3>
-            <div style="background: var(--bg-darker); padding: 1.5rem; border-radius: 8px;">
-                <pre style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 0.9rem; margin: 0; color: var(--text-secondary);">{{ result.breakdown }}</pre>
-            </div>
-            <div class="mt-2">
-                <canvas id="heuristicsChart" height="120"></canvas>
+            <div class="breakdown-grid">
+                <div class="breakdown-details">
+                    {% set score_parts = result.breakdown.get('score_breakdown', {}) %}
+                    {% set total_risk = score_parts.values() | sum %}
+
+                    {% if total_risk == 0 %}
+                    <div class="safe-state">
+                        <h4><i class="fas fa-check-circle"></i> No significant threats detected</h4>
+                        <p class="text-muted">All available heuristics indicate the message is safe.</p>
+                    </div>
+                    {% else %}
+                    <h4>Key Findings</h4>
+                    <ul class="breakdown-list">
+                        {% for label, points in score_parts.items() %}
+                        <li>
+                            <span class="bold">{{ label.replace('_', ' ').title() }}:</span>
+                            <span class="pill {{ 'danger' if points > 0 else 'success' }}">+{{ points }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    {% if result.breakdown %}
+                    <h4>Details</h4>
+                    <div class="breakdown-details-inner">
+                        {% for k, v in result.breakdown.items() %}
+                            {% if k != 'score_breakdown' %}
+                                <div class="breakdown-row">
+                                    <span class="label">{{ k.replace('_', ' ').title() }}</span>
+                                    <span class="value">
+                                        {% if v is mapping %}
+                                            {{ v | tojson }}
+                                        {% elif v is iterable and v is not string %}
+                                            {{ v | join(', ') }}
+                                        {% else %}
+                                            {{ v }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="breakdown-chart">
+                    <canvas id="heuristicsChart" height="240"></canvas>
+                </div>
             </div>
         </div>
 
@@ -462,27 +522,48 @@
             try {
                 const ctx = document.getElementById('heuristicsChart');
                 if (ctx && window.Chart) {
-                    const breakdown = {{ result.breakdown | tojson | safe }};
-                    const counts = {
-                        auth: (breakdown.spf === 'fail' ? 1 : 0) + (breakdown.dkim === 'fail' ? 1 : 0) + (breakdown.dmarc === 'fail' ? 1 : 0),
-                        blacklists: (breakdown.blacklist_hits ? breakdown.blacklist_hits.length : 0),
-                        attachments: (breakdown.risky_attachments ? breakdown.risky_attachments.length : 0),
-                        links: (breakdown.risky_links || 0)
-                    };
+                    const breakdown = {{ result.breakdown | tojson | safe }} || {};
+                    const scores = breakdown.score_breakdown || {};
+                    const labels = Object.keys(scores);
+                    const values = Object.values(scores);
+                    const colors = labels.map(label => {
+                        const normalized = (label === 'auth' ? 0 : label === 'blacklists' ? 1 : label === 'attachments' ? 2 : label === 'links' ? 3 : 4);
+                        const palette = ['#ff4444', '#ffaa00', '#ff0088', '#00ff88', '#0088ff'];
+                        return palette[normalized % palette.length];
+                    });
+
                     new Chart(ctx, {
-                        type: 'bar',
+                        type: 'doughnut',
                         data: {
-                            labels: ['Auth', 'Blacklists', 'Attachments', 'Links'],
+                            labels,
                             datasets: [{
-                                label: 'Risk components',
-                                data: [counts.auth, counts.blacklists, counts.attachments, counts.links],
-                                backgroundColor: ['#ff4444', '#ffaa00', '#ffaa00', '#ff4444']
+                                label: 'Threat contributions',
+                                data: values,
+                                backgroundColor: colors,
+                                borderColor: 'rgba(0,0,0,0.2)',
+                                borderWidth: 2,
                             }]
                         },
-                        options: { responsive: true, plugins: { legend: { display: false } } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { color: '#ccc', boxWidth: 12, padding: 12 }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ctx) => `${ctx.label}: ${ctx.formattedValue} pts`
+                                    }
+                                }
+                            }
+                        }
                     });
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Chart rendering failed', e);
+            }
         });
     </script>
 </body>

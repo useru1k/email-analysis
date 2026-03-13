@@ -29,6 +29,7 @@ from .services import (
     expand_short_url,
     virustotal_url_check,
     virustotal_file_check,
+    search_malware_reports,
     check_ips,
     parse_auth_results,
     compute_threat_score,
@@ -102,6 +103,14 @@ async def analyze(
         vt_file_res = await asyncio.gather(*vt_file_tasks, return_exceptions=True)
         for idx, vt in enumerate(vt_file_res):
             attachments[idx]["vt"] = vt if not isinstance(vt, Exception) else None
+
+            # If VT flagged as malicious, search for additional reports
+            if vt and not isinstance(vt, Exception) and isinstance(vt, dict):
+                stats = vt.get("data", {}).get("attributes", {}).get("last_analysis_stats", {})
+                if stats.get("malicious", 0) > 0 or stats.get("suspicious", 0) > 0:
+                    reports = await search_malware_reports(attachments[idx]["sha256"], settings)
+                    if reports:
+                        attachments[idx]["malware_reports"] = reports
 
     # URL expansion and heuristics
     expanded_links: List[Dict[str, Any]] = []

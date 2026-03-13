@@ -20,6 +20,7 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
   - MalwareBazaar integration for malware detection
   - SHA-256 hash calculation
   - **Local hash cache** to store previous VirusTotal results (speeds repeated scans)
+  - **Malware report search** - automatically finds and links to analysis reports for flagged files
 - **Header Analysis**: Extraction and validation of email headers
 - **Dual Mode Operation**: Online (with API integrations) and Offline modes
 
@@ -64,6 +65,8 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
    ```env
    VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
    ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
+   GOOGLE_SEARCH_API_KEY=your_google_search_api_key_here
+   GOOGLE_SEARCH_CX=your_google_custom_search_cx_here
    IPAPI_URL=http://ip-api.com/json/
    ```
    
@@ -125,6 +128,8 @@ The threat score is calculated on a scale of 0-100, where higher scores indicate
 |----------|-------------|----------|---------|
 | `VIRUSTOTAL_API_KEY` | VirusTotal API key for URL and file scanning (hash lookups) | Yes | Empty |
 | `ABUSEIPDB_API_KEY` | AbuseIPDB API key for IP reputation checking | No | Empty |
+| `GOOGLE_SEARCH_API_KEY` | Google Custom Search API key for malware report searching | No | Empty |
+| `GOOGLE_SEARCH_CX` | Google Custom Search Engine ID for malware report searching | No | Empty |
 | `IPAPI_URL` | IP geolocation API endpoint | No | `http://ip-api.com/json/` |
 | `HASH_CACHE_PATH` | File path to store/retrieve cached hash reports | No | `hash_cache.json` |
 
