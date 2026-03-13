@@ -13,6 +13,7 @@ from .attachment_analysis import virustotal_file_check
 from .attachment_analysis import flag_attachment_risky, AttachmentRisk, compute_sha256
 from .auth_analysis import parse_auth_results
 from .threat_scoring import compute_threat_score
+from .cache import get_cached_hash, set_cached_hash
 
 __all__ = [
     "parse_email",
@@ -33,4 +34,6 @@ __all__ = [
     "compute_sha256",
     "parse_auth_results",
     "compute_threat_score",
+    "get_cached_hash",
+    "set_cached_hash",
 ]

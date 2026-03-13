@@ -18,6 +18,8 @@ from app.services import (
     compute_threat_score,
     domain_intelligence,
     virustotal_file_check,
+    get_cached_hash,
+    set_cached_hash,
 )
 
 SAMPLE_EML = """From: test@example.com
@@ -83,30 +85,58 @@ def test_threat_score_considers_vt():
 
 
 
-@pytest.mark.asyncio
-async def test_virustotal_file_check(monkeypatch):
-    # simulate a successful VT response without hitting the network
-    class DummyResp:
-        status_code = 200
-        def json(self):
-            return {"fake": "data"}
+def test_virustotal_file_check(monkeypatch, tmp_path):
+    # run the async portion in an event loop manually so pytest plugins aren't
+    # required.
+    async def inner():
+        # simulate a successful VT response and exercise the cache
+        class DummyResp:
+            status_code = 200
+            def json(self):
+                return {"fake": "data"}
 
-    class DummyClient:
-        def __init__(self, *args, **kwargs):
-            pass
-        async def get(self, url, headers=None):
-            return DummyResp()
-        async def __aenter__(self):
-            return self
-        async def __aexit__(self, exc_type, exc, tb):
-            pass
+        class DummyClient:
+            def __init__(self, *args, **kwargs):
+                pass
+            async def get(self, url, headers=None):
+                return DummyResp()
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
 
-    monkeypatch.setattr("app.services.attachment_analysis.httpx.AsyncClient", DummyClient)
-    class DummySettings:
-        virustotal_api_key = "key"
+        monkeypatch.setattr("app.services.attachment_analysis.httpx.AsyncClient", DummyClient)
 
-    res = await virustotal_file_check("abcd", DummySettings())
-    assert res == {"fake": "data"}
+        class DummySettings:
+            virustotal_api_key = "key"
+            hash_cache_path = str(tmp_path / "cache.json")
+
+        # first call should hit network (DummyClient) and populate cache
+        res1 = await virustotal_file_check("abcd", DummySettings())
+        assert res1 == {"fake": "data"}
+
+        # patch the client to raise if called, cache should bypass it
+        class FailClient:
+            def __init__(self, *args, **kwargs):
+                pass
+            async def get(self, url, headers=None):
+                raise RuntimeError("should not be called")
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
+
+        monkeypatch.setattr("app.services.attachment_analysis.httpx.AsyncClient", FailClient)
+
+        res2 = await virustotal_file_check("abcd", DummySettings())
+        assert res2 == {"fake": "data"}
+
+        # test cache helpers directly
+        assert get_cached_hash("abcd", DummySettings().hash_cache_path) == {"fake": "data"}
+        set_cached_hash("efgh", {"other": 1}, DummySettings().hash_cache_path)
+        assert get_cached_hash("efgh", DummySettings().hash_cache_path) == {"other": 1}
+
+    asyncio.run(inner())
 
 
 def test_domain_intel():
