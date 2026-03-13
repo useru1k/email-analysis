@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     # API keys
     virustotal_api_key: Optional[str] = Field("", env="VIRUSTOTAL_API_KEY")
     abuseipdb_api_key: Optional[str] = Field("", env="ABUSEIPDB_API_KEY")
+    google_search_api_key: Optional[str] = Field("", env="GOOGLE_SEARCH_API_KEY")
+    google_search_cx: Optional[str] = Field("", env="GOOGLE_SEARCH_CX")
 
     # External service endpoints
     ipapi_url: AnyHttpUrl = Field("http://ip-api.com/json/", env="IPAPI_URL")

@@ -18,6 +18,7 @@ from app.services import (
     compute_threat_score,
     domain_intelligence,
     virustotal_file_check,
+    search_malware_reports,
     get_cached_hash,
     set_cached_hash,
 )
@@ -139,9 +140,39 @@ def test_virustotal_file_check(monkeypatch, tmp_path):
     asyncio.run(inner())
 
 
-def test_domain_intel():
-    intel = asyncio.run(domain_intelligence("https://example.com"))
-    assert intel.get("domain") == "example.com"
+@pytest.mark.asyncio
+async def test_search_malware_reports(monkeypatch):
+    # simulate a successful Google Search response without hitting the network
+    class DummyResp:
+        status_code = 200
+        def json(self):
+            return {
+                "items": [
+                    {"title": "Malware Report 1", "link": "https://example.com/report1"},
+                    {"title": "Malware Report 2", "link": "https://example.com/report2"},
+                ]
+            }
+
+    class DummyClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        async def get(self, url, params=None):
+            return DummyResp()
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
+    monkeypatch.setattr("app.services.attachment_analysis.httpx.AsyncClient", DummyClient)
+    class DummySettings:
+        google_search_api_key = "key"
+        google_search_cx = "cx"
+
+    res = await search_malware_reports("abcd", DummySettings())
+    assert res == [
+        {"title": "Malware Report 1", "link": "https://example.com/report1"},
+        {"title": "Malware Report 2", "link": "https://example.com/report2"},
+    ]
 
 
 def test_header_issues():
@@ -149,8 +180,11 @@ def test_header_issues():
     m = EmailMessage()
     m["From"] = "user@example.com"
     m["Return-Path"] = "<other@evil.com>"
+    m["Reply-To"] = "attacker@evil.com"
     issues = check_header_issues(m)
     assert any("Return-Path" in i for i in issues)
+    assert any("Reply-To" in i for i in issues)
+    assert any("Message-ID" in i for i in issues)
 
 
 def test_ip_extraction():

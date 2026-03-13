@@ -63,6 +63,42 @@ async def virustotal_file_check(sha256: str, settings: Any) -> Optional[Dict[str
     return None
 
 
+async def search_malware_reports(sha256: str, settings: Any) -> Optional[List[Dict[str, str]]]:
+    """Search for malware analysis reports related to a SHA256 hash.
+
+    Uses Google Custom Search API to find relevant reports from trusted sources.
+    Returns a list of dicts with 'title' and 'link' keys, or None on failure.
+    """
+    if not getattr(settings, "google_search_api_key", None) or not getattr(settings, "google_search_cx", None):
+        return None
+
+    query = f'malware analysis report "{sha256}" filetype:pdf OR site:malwarebytes.com OR site:virustotal.com OR site:hybrid-analysis.com'
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        "key": settings.google_search_api_key,
+        "cx": settings.google_search_cx,
+        "q": query,
+        "num": 5,  # Limit to top 5 results
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, params=params)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = []
+                for item in data.get("items", []):
+                    results.append({
+                        "title": item.get("title", ""),
+                        "link": item.get("link", ""),
+                    })
+                return results if results else None
+            logger.debug("Google Search API returned %s for %s", resp.status_code, sha256)
+    except Exception as exc:
+        logger.debug("Google Search API exception for %s: %s", sha256, exc)
+    return None
+
+
 def flag_attachment_risky(ext: str, content_type: str) -> bool:
     """Simple heuristics indicating potentially dangerous attachments.
 

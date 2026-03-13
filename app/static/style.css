@@ -108,6 +108,152 @@ body::before {
   overflow: hidden;
 }
 
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.breakdown-details h4 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.breakdown-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.breakdown-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.breakdown-list li:last-child {
+  border-bottom: none;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.breakdown-row:last-child {
+  border-bottom: none;
+}
+
+.breakdown-row .label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 1rem;
+}
+
+.breakdown-row .value {
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-word;
+}
+
+.breakdown-details-inner {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1rem;
+  border-radius: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.safe-state {
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.safe-state h4 {
+  margin-bottom: 0.5rem;
+  color: var(--success-color);
+}
+
+.safe-state p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pill.success {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--success-color);
+}
+
+.pill.danger {
+  background: rgba(255, 68, 68, 0.1);
+  color: var(--danger-color);
+}
+
+.breakdown-chart {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.malware-reports-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 12px;
+}
+
+.malware-reports-section h4 {
+  margin-bottom: 0.5rem;
+  color: var(--danger-color);
+  font-size: 1rem;
+}
+
+.reports-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.reports-list li {
+  margin-bottom: 0.5rem;
+}
+
+.reports-list a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.reports-list a:hover {
+  text-decoration: underline;
+}
+
 .card::before {
   content: '';
   position: absolute;
