@@ -1,0 +1,35 @@
+[project]
+name = "email-analysis"
+version = "0.1.0"
+description = "Analyze email messages for threats, attachments, URLs, and IPs."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "thebluecapture", email = "you@example.com" }
+]
+
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "jinja2",
+  "python-multipart",
+  "email-validator",
+  "dnspython",
+  "httpx",
+  "requests",
+  "pydantic",
+  "pydantic-settings",
+  "tldextract",
+  "python-whois",
+  "python-dotenv",
+  "yara-python",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
