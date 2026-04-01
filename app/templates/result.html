@@ -447,6 +447,9 @@
             <button id="downloadJson" class="btn btn-secondary">
                 <i class="fas fa-file-download"></i> Download JSON
             </button>
+            <button id="downloadHtml" class="btn btn-secondary">
+                <i class="fas fa-file-code"></i> Download HTML
+            </button>
         </div>
     </div>
 
@@ -515,6 +518,40 @@
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
+                });
+            }
+
+            // Download HTML report button (with inlined CSS for offline styling)
+            const downloadHtmlBtn = document.getElementById('downloadHtml');
+            if (downloadHtmlBtn) {
+                downloadHtmlBtn.addEventListener('click', async () => {
+                    let cssText = '';
+                    try {
+                        const response = await fetch('/static/style.css');
+                        if (response.ok) {
+                            cssText = await response.text();
+                        }
+                    } catch (e) {
+                        console.warn('Could not fetch style.css for inline download, proceeding without inline styles.', e);
+                    }
+
+                    let htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                    if (cssText) {
+                        htmlContent = htmlContent.replace(
+                            /<link rel="stylesheet" href="\/static\/style\.css"\s*>/i,
+                            `<style>${cssText}</style>`
+                        );
+                    }
+
+                    const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+                    const htmlUrl = URL.createObjectURL(blobHtml);
+                    const aHtml = document.createElement('a');
+                    aHtml.href = htmlUrl;
+                    aHtml.download = 'analysis-report.html';
+                    document.body.appendChild(aHtml);
+                    aHtml.click();
+                    document.body.removeChild(aHtml);
+                    URL.revokeObjectURL(htmlUrl);
                 });
             }
 
