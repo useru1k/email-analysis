@@ -1,10 +1,4 @@
 # app/main.py
-"""FastAPI application entrypoint.
-
-Routes are intentionally thin; most of the business logic lives in the
-``app.services`` package.  Dependency injection is used to supply the
-configuration/settings object to handlers.
-"""
 
 from __future__ import annotations
 
