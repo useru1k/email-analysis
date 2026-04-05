@@ -437,7 +437,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="text-center mb-4 fade-in">
+        <div class="action-buttons fade-in">
             <a href="/" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Analyze Another Email
             </a>
@@ -446,6 +446,9 @@
             </button>
             <button id="downloadJson" class="btn btn-secondary">
                 <i class="fas fa-file-download"></i> Download JSON
+            </button>
+            <button id="downloadHtml" class="btn btn-secondary">
+                <i class="fas fa-file-code"></i> Download HTML
             </button>
         </div>
     </div>
@@ -515,6 +518,57 @@
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
+                });
+            }
+
+            // Download HTML report button (clean report-only HTML snapshot)
+            const downloadHtmlBtn = document.getElementById('downloadHtml');
+            if (downloadHtmlBtn) {
+                downloadHtmlBtn.addEventListener('click', async () => {
+                    let cssText = '';
+                    try {
+                        const response = await fetch('/static/style.css');
+                        if (response.ok) {
+                            cssText = await response.text();
+                        }
+                    } catch (e) {
+                        console.warn('Could not fetch style.css for inline download, proceeding without inline styles.', e);
+                    }
+
+                    const container = document.querySelector('.container');
+                    if (!container) {
+                        alert('Report content not available for download');
+                        return;
+                    }
+
+                    const reportClone = container.cloneNode(true);
+                    // remove UI navigation/action controls from download output
+                    reportClone.querySelector('header.results-header')?.remove();
+                    reportClone.querySelector('.text-center.mb-4')?.remove();
+
+                    const reportHtml = `<!DOCTYPE html>\n<html lang="en">\n<head>\n` +
+                        document.head.innerHTML +
+                        `\n</head>\n<body>\n` +
+                        reportClone.outerHTML +
+                        `\n</body>\n</html>`;
+
+                    let finalHtml = reportHtml;
+                    if (cssText) {
+                        finalHtml = finalHtml.replace(
+                            /<link rel=\"stylesheet\" href=\"\/static\/style\.css\"(?:[^>]*?)>/i,
+                            `<style>${cssText}</style>`
+                        );
+                    }
+
+                    const blobHtml = new Blob([finalHtml], { type: 'text/html' });
+                    const htmlUrl = URL.createObjectURL(blobHtml);
+                    const aHtml = document.createElement('a');
+                    aHtml.href = htmlUrl;
+                    aHtml.download = 'analysis-report.html';
+                    document.body.appendChild(aHtml);
+                    aHtml.click();
+                    document.body.removeChild(aHtml);
+                    URL.revokeObjectURL(htmlUrl);
                 });
             }
 
