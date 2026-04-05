@@ -437,7 +437,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="text-center mb-4 fade-in">
+        <div class="action-buttons fade-in">
             <a href="/" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Analyze Another Email
             </a>
@@ -521,7 +521,7 @@
                 });
             }
 
-            // Download HTML report button (with inlined CSS for offline styling)
+            // Download HTML report button (clean report-only HTML snapshot)
             const downloadHtmlBtn = document.getElementById('downloadHtml');
             if (downloadHtmlBtn) {
                 downloadHtmlBtn.addEventListener('click', async () => {
@@ -535,15 +535,32 @@
                         console.warn('Could not fetch style.css for inline download, proceeding without inline styles.', e);
                     }
 
-                    let htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                    const container = document.querySelector('.container');
+                    if (!container) {
+                        alert('Report content not available for download');
+                        return;
+                    }
+
+                    const reportClone = container.cloneNode(true);
+                    // remove UI navigation/action controls from download output
+                    reportClone.querySelector('header.results-header')?.remove();
+                    reportClone.querySelector('.text-center.mb-4')?.remove();
+
+                    const reportHtml = `<!DOCTYPE html>\n<html lang="en">\n<head>\n` +
+                        document.head.innerHTML +
+                        `\n</head>\n<body>\n` +
+                        reportClone.outerHTML +
+                        `\n</body>\n</html>`;
+
+                    let finalHtml = reportHtml;
                     if (cssText) {
-                        htmlContent = htmlContent.replace(
-                            /<link rel="stylesheet" href="\/static\/style\.css"\s*>/i,
+                        finalHtml = finalHtml.replace(
+                            /<link rel=\"stylesheet\" href=\"\/static\/style\.css\"(?:[^>]*?)>/i,
                             `<style>${cssText}</style>`
                         );
                     }
 
-                    const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+                    const blobHtml = new Blob([finalHtml], { type: 'text/html' });
                     const htmlUrl = URL.createObjectURL(blobHtml);
                     const aHtml = document.createElement('a');
                     aHtml.href = htmlUrl;

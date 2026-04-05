@@ -377,6 +377,21 @@ body::before {
   color: var(--primary-color);
 }
 
+/* Action Buttons Container */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 4rem;
+  flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 /* Analysis mode selector */
 .mode-selector {
   display: flex;
