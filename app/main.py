@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings, Settings
+from .input_validator import get_input_source, InputMode
 from .services import (
     parse_email,
     extract_basic_headers,
@@ -58,32 +59,55 @@ async def analyze(
     emlfile: UploadFile | None = File(None),
     settings: Settings = Depends(get_settings),
 ) -> HTMLResponse:
-    # basic validation
-    if not emlfile and not rawtext.strip():
-        raise HTTPException(status_code=400, detail="Please upload a file or paste email content.")
-
-    content = ""
-    if emlfile:
-        if not emlfile.filename.lower().endswith(".eml"):
-            raise HTTPException(status_code=400, detail="Only .eml files are permitted.")
-        data = await emlfile.read()
-        if len(data) > settings.max_upload_size:
-            raise HTTPException(status_code=413, detail="Uploaded file too large.")
-        try:
-            content = data.decode("utf-8", errors="replace")
-        except Exception:
-            content = data.decode("latin1", errors="replace")
-    else:
-        # raw text path
-        if len(rawtext) > 1_000_000:
-            raise HTTPException(status_code=413, detail="Raw text too long.")
-        content = rawtext
+    """
+    Analyze email from either file upload or raw pasted content.
+    
+    Clean API design:
+    - Input is strictly one of: file upload OR pasted raw content
+    - Validation distinguishes between input sources  
+    - Backend handles both securely with appropriate validation
+    
+    Args:
+        request: FastAPI request object
+        mode: Analysis mode ('online' or 'offline')
+        rawtext: Raw email content pasted by user
+        emlfile: Uploaded .eml file
+        settings: Application settings
+        
+    Returns:
+        HTML response with analysis results
+        
+    Raises:
+        HTTPException: For validation or processing errors
+    """
+    
+    # Determine input source and validate
+    # Check if file was actually uploaded (has size > 0)
+    has_file = emlfile is not None and emlfile.filename
+    
+    # Read file data if provided
+    file_data = None
+    if has_file:
+        file_data = await emlfile.read()
+    
+    # Use new validation logic to distinguish input source
+    try:
+        input_mode, content = get_input_source(
+            has_file=has_file,
+            filename=emlfile.filename if has_file else None,
+            file_data=file_data,
+            raw_text=rawtext,
+        )
+        logger.info("Input validated: type=%s mode=%s content_size=%d bytes", 
+                   input_mode.value, mode, len(content))
+    except HTTPException:
+        raise  # Re-raise validation exceptions
 
     try:
         msg = parse_email(content)
     except Exception as exc:
         logger.error("Failed to parse email: %s", exc)
-        raise HTTPException(status_code=400, detail="Invalid email content.")
+        raise HTTPException(status_code=400, detail="Invalid email content: could not parse as email.")
 
     headers = extract_basic_headers(msg)
     header_issues = check_header_issues(msg)
@@ -187,7 +211,8 @@ async def analyze(
         "mode": mode,
     }
 
-    logger.info("Analysis complete score=%s mode=%s ips=%s links=%s attachments=%s", score, mode, len(ips), len(links), len(attachments))
+    logger.info("Analysis complete: threat_score=%d mode=%s input_type=%s ips=%d links=%d attachments=%d", 
+                score, mode, input_mode.value, len(ips), len(links), len(attachments))
 
     # ensure JSON serializable for template (dates, objects)
     from fastapi.encoders import jsonable_encoder

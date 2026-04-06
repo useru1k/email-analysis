@@ -134,6 +134,7 @@
         const removeFileBtn = document.getElementById('removeFile');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const loadingSpinner = document.getElementById('loadingSpinner');
+        const rawTextArea = document.querySelector('textarea[name="rawtext"]');
 
         // Mode selection
         const modeOptions = document.querySelectorAll('.mode-option');
@@ -176,6 +177,8 @@
                 fileName.textContent = file.name;
                 fileInfo.style.display = 'block';
                 fileUploadArea.style.display = 'none';
+                // Clear textarea when file is selected (mutually exclusive inputs)
+                rawTextArea.value = '';
             }
         }
 
@@ -186,14 +189,42 @@
             fileUploadArea.style.display = 'block';
         });
 
-        // Form submission
+        // Clear file when user starts typing raw content (mutually exclusive inputs)
+        rawTextArea.addEventListener('focus', () => {
+            if (rawTextArea.value.trim().length > 0) {
+                // User has typed, clear file input if not already cleared
+                if (fileInput.files[0]) {
+                    fileInput.value = '';
+                    fileInfo.style.display = 'none';
+                    fileUploadArea.style.display = 'block';
+                }
+            }
+        });
+
+        rawTextArea.addEventListener('input', () => {
+            // If user is typing, auto-clear file selection
+            if (rawTextArea.value.trim().length > 0 && fileInput.files[0]) {
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                fileUploadArea.style.display = 'block';
+            }
+        });
+
+        // Form submission with improved validation
         document.getElementById('analysisForm').addEventListener('submit', (e) => {
             const file = fileInput.files[0];
-            const rawText = document.querySelector('textarea[name="rawtext"]').value.trim();
+            const rawText = rawTextArea.value.trim();
+            
+            // Validation: exactly one input method
+            if (file && rawText) {
+                e.preventDefault();
+                alert('Please provide EITHER a file OR raw content, not both. Choose one input method.');
+                return;
+            }
             
             if (!file && !rawText) {
                 e.preventDefault();
-                alert('Please upload a file or paste email content.');
+                alert('Please provide either:\n1. Upload an .eml file, OR\n2. Paste raw email content');
                 return;
             }
 
