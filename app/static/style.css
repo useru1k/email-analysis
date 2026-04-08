@@ -713,3 +713,190 @@ body::before {
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* AI Report Styles */
+.ai-report-content {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.05), rgba(0, 136, 255, 0.05));
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-report-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+}
+
+.ai-model-info {
+  background: rgba(0, 136, 255, 0.08);
+  border: 1px solid rgba(0, 136, 255, 0.3);
+  border-radius: 10px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.ai-model-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 1rem;
+  background: rgba(0, 255, 136, 0.15);
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.model-name {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+.ai-model-details {
+  flex: 1;
+  min-width: 300px;
+}
+
+.model-desc {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.prompt-info {
+  margin: 0.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.prompt-info strong {
+  color: var(--text-secondary);
+}
+
+.badge-mini {
+  display: inline-block;
+  background: rgba(0, 255, 136, 0.2);
+  color: var(--primary-color);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.prompt-details {
+  margin-top: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.prompt-details summary {
+  color: var(--secondary-color);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.8rem;
+  background: rgba(0, 136, 255, 0.1);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.prompt-details summary:hover {
+  background: rgba(0, 136, 255, 0.2);
+  color: var(--secondary-color);
+  text-decoration: none;
+}
+
+.prompt-details summary::-webkit-details-marker {
+  color: var(--secondary-color);
+}
+
+.prompt-content {
+  margin-top: 0.8rem;
+  background: var(--bg-darker);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.prompt-content pre {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-report-header {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid var(--primary-color);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ai-report-text {
+  color: var(--text-primary);
+  line-height: 1.8;
+  font-size: 1rem;
+  white-space: pre-line;
+  padding: 1rem 0;
+}
+
+.ai-report-text br {
+  margin-bottom: 0.8rem;
+  content: '';
+  display: block;
+}
+
+/* Animation for AI processing */
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.ai-processing {
+  animation: ai-pulse 2s ease-in-out infinite;
+}
+

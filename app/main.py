@@ -19,6 +19,7 @@ from .services import (
     extract_received_ips,
     extract_links_from_body,
     extract_attachments,
+    extract_body_text,
     check_header_issues,
     is_shortened,
     expand_short_url,
@@ -29,6 +30,7 @@ from .services import (
     parse_auth_results,
     compute_threat_score,
     domain_intelligence,
+    generate_ai_threat_report,
 )
 
 logger = logging.getLogger("app")
@@ -195,6 +197,17 @@ async def analyze(
         risky_link_count,
     )
 
+    # Extract email body for AI analysis
+    email_body = extract_body_text(msg)
+
+    # Generate AI threat report (returns dict with model info)
+    ai_report_data = await generate_ai_threat_report(
+        email_body,
+        headers,
+        score,
+        breakdown
+    )
+
     result = {
         "headers": headers,
         "auth": auth_details,
@@ -208,6 +221,12 @@ async def analyze(
         "blacklist_hits": blacklist_hits,
         "threat_score": score,
         "breakdown": breakdown,
+        "ai_threat_report": ai_report_data.get("ai_report", ""),
+        "ai_model": ai_report_data.get("model", "Unknown"),
+        "ai_model_description": ai_report_data.get("model_description", ""),
+        "ai_prompt_used": ai_report_data.get("prompt_used", ""),
+        "ai_method": ai_report_data.get("method", "Unknown"),
+        "ai_conversation_turns": ai_report_data.get("conversation_turns", 1),
         "mode": mode,
     }
 

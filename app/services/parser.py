@@ -83,6 +83,37 @@ def extract_links_from_body(msg: email.message.EmailMessage) -> List[str]:
     return URL_REGEX.findall(text)
 
 
+def extract_body_text(msg: email.message.EmailMessage) -> str:
+    """Extract the plain text body from the email message."""
+    body_texts: List[str] = []
+    if msg.is_multipart():
+        for part in msg.walk():
+            ctype = part.get_content_type()
+            if ctype == "text/plain":
+                try:
+                    body_texts.append(part.get_content())
+                except Exception:
+                    continue
+            elif ctype == "text/html":
+                # For HTML, we could strip tags, but for now just get text
+                try:
+                    html_content = part.get_content()
+                    # Simple HTML tag removal
+                    import re
+                    clean_text = re.sub(r'<[^>]+>', '', html_content)
+                    body_texts.append(clean_text)
+                except Exception:
+                    continue
+    else:
+        try:
+            content = msg.get_content()
+            if isinstance(content, str):
+                body_texts.append(content)
+        except Exception:
+            pass
+    return "\n".join(body_texts).strip()
+
+
 from ..services.attachment_analysis import compute_sha256, flag_attachment_risky
 
 

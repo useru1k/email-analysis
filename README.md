@@ -2,6 +2,8 @@
 
 An Email Analysis Tool with threat scoring, URL/attachment safety checks, and comprehensive security analysis for detecting phishing and malicious emails.
 
+> 🤖 **NEW**: AI-Powered Threat Analysis using **Meta Llama-3.3-70B** model! Get detailed threat assessments and recommendations. [Setup Guide](LLAMA_AI_SETUP.md)
+
 ## Features
 
 - **Threat Score Calculation**: Comprehensive 0-100 threat score based on multiple security factors
@@ -22,6 +24,8 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
   - **Local hash cache** to store previous VirusTotal results (speeds repeated scans)
   - **Malware report search** - automatically finds and links to analysis reports for flagged files
 - **Header Analysis**: Extraction and validation of email headers
+- **AI-Powered Threat Analysis**: Uses Meta Llama-3.3-70B model via Hugging Face InferenceClient for intelligent threat assessment and detailed analysis reports (requires HF_TOKEN)
+- **Intelligent Fallback**: Rule-based threat analysis when AI unavailable
 - **Dual Mode Operation**: Online (with API integrations) and Offline modes
 
 ## Installation
@@ -57,12 +61,18 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
 3. **Install dependencies**
    ```bash
    pip install -r app/requirement.txt
+   # Or using pip directly:
+   pip install huggingface-hub
    ```
 
-4. **Configure environment variables** (Optional, for online mode)
+4. **Configure environment variables** (Optional, for online mode and AI analysis)
    
    Create a `.env` file in the root directory:
    ```env
+   # Hugging Face API Token (required for AI threat analysis with Llama model)
+   HF_TOKEN=your_huggingface_api_token_here
+   
+   # Optional: VirusTotal and threat intelligence APIs
    VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
    ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
    GOOGLE_SEARCH_API_KEY=your_google_search_api_key_here
@@ -70,7 +80,15 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
    IPAPI_URL=http://ip-api.com/json/
    ```
    
+   **Getting HF_TOKEN:**
+   1. Create a free account at [Hugging Face](https://huggingface.co)
+   2. Go to [Settings → Tokens](https://huggingface.co/settings/tokens)
+   3. Create a new token with "read" access
+   4. Copy and paste it into `.env` as `HF_TOKEN=hf_xxxxxxxxxxxxx`
+   
    **Note**: 
+   - HF_TOKEN enables AI-powered threat analysis using Llama-3.3-70B model
+   - Without HF_TOKEN, the app falls back to rule-based threat analysis
    - VirusTotal API key is optional but recommended for URL and file hash scanning
    - AbuseIPDB API key is optional but recommended for IP reputation checking
    - You can use the application in offline mode without API keys

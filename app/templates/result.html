@@ -436,6 +436,50 @@
             </div>
         </div>
 
+        <!-- AI Threat Report -->
+        {% if result.ai_threat_report %}
+        <div class="card fade-in slide-in-left">
+            <h3><i class="fas fa-brain"></i> AI Threat Analysis Report</h3>
+            
+            <!-- AI Model Info Bar -->
+            <div class="ai-model-info">
+                <div class="ai-model-badge">
+                    <i class="fas fa-microchip"></i>
+                    <span class="model-name">{{ result.ai_model }}</span>
+                </div>
+                <div class="ai-model-details">
+                    <p class="model-desc">{{ result.ai_model_description }}</p>
+                    <p class="prompt-info">
+                        <strong>Analysis Method:</strong> {{ result.ai_method }}
+                        {% if result.ai_conversation_turns > 1 %}
+                            <span class="badge-mini">{{ result.ai_conversation_turns }} Multi-Turn Conversation</span>
+                        {% endif %}
+                    </p>
+                    {% if result.ai_prompt_used %}
+                    <details class="prompt-details">
+                        <summary><i class="fas fa-code"></i> View Prompt Strategy</summary>
+                        <div class="prompt-content">
+                            <pre>{{ result.ai_prompt_used }}</pre>
+                        </div>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- AI Report Content -->
+            <div class="ai-report-content">
+                <div class="ai-report-header">
+                    <span class="ai-badge">
+                        <i class="fas fa-robot"></i> AI-Generated Analysis
+                    </span>
+                </div>
+                <div class="ai-report-text">
+                    {{ result.ai_threat_report | replace('\n', '<br>') | safe }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Action Buttons -->
         <div class="action-buttons fade-in">
             <a href="/" class="btn btn-primary">
