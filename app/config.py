@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     abuseipdb_api_key: Optional[str] = Field("", env="ABUSEIPDB_API_KEY")
     google_search_api_key: Optional[str] = Field("", env="GOOGLE_SEARCH_API_KEY")
     google_search_cx: Optional[str] = Field("", env="GOOGLE_SEARCH_CX")
+    hf_token: Optional[str] = Field("", env="HF_TOKEN")
 
     # External service endpoints
     ipapi_url: AnyHttpUrl = Field("http://ip-api.com/json/", env="IPAPI_URL")
