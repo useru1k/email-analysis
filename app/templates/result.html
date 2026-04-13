@@ -51,8 +51,39 @@
             </div>
         </div>
 
-        <!-- Email Headers -->
-        <div class="card fade-in slide-in-left">
+        <!-- AI-Powered Security Report -->
+        {% if result.ai_report %}
+        <div class="card fade-in slide-in-left ai-report-card">
+            <div class="ai-report-header">
+                <div>
+                    <h2><i class="fas fa-robot"></i> AI Security Analysis</h2>
+                    <span class="ai-badge">LLM-Generated Report</span>
+                </div>
+            </div>
+            <div class="ai-report-content">
+                <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.95rem; line-height: 1.7; background: transparent; padding: 0; border: none; color: var(--text-secondary); margin: 0;">{{ result.ai_report }}</pre>
+            </div>
+            <div class="ai-report-footer">
+                <small class="text-muted">
+                    <i class="fas fa-shield-check"></i> AI-powered analysis • Always verify critical findings manually
+                </small>
+            </div>
+        </div>
+        {% else %}
+        <div class="card fade-in slide-in-left ai-report-card ai-unavailable">
+            <h2><i class="fas fa-robot"></i> AI Security Analysis</h2>
+            <div style="background: rgba(255,170,0,0.1); padding: 1.2rem; border-radius: 8px; border-left: 4px solid var(--warning-color); text-align: center;">
+                <p style="margin: 0.5rem 0; color: var(--text-secondary);">
+                    <i class="fas fa-exclamation-circle"></i> <strong>AI Report Not Available</strong>
+                </p>
+                <p class="text-muted" style="margin: 0.5rem 0 1rem 0; font-size: 0.9rem;">
+                    Configure <code style="background: rgba(0,0,0,0.3); padding: 0.3rem 0.6rem; border-radius: 3px;">HF_TOKEN</code> in .env to enable AI analysis
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        
             <h3><i class="fas fa-envelope"></i> Email Headers</h3>
             <div class="data-table">
                 <table>
