@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import logging
 import asyncio
+import os
 from typing import List, Dict, Any
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from root .env file
+root_dir = Path(__file__).parent.parent
+load_dotenv(root_dir / ".env")
 
 from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, HTTPException
 from fastapi.responses import HTMLResponse
@@ -28,6 +35,7 @@ from .services import (
     parse_auth_results,
     compute_threat_score,
     domain_intelligence,
+    generate_analysis_report,
 )
 
 logger = logging.getLogger("app")
@@ -171,6 +179,7 @@ async def analyze(
         risky_link_count,
     )
 
+    # Build result dictionary with all analysis data
     result = {
         "headers": headers,
         "auth": auth_details,
@@ -186,6 +195,20 @@ async def analyze(
         "breakdown": breakdown,
         "mode": mode,
     }
+
+    # Generate AI-powered security report using LLM
+    ai_report = None
+    if settings.hf_token:
+        try:
+            ai_report = await generate_analysis_report(result, settings.hf_token)
+        except Exception as exc:
+            logger.error("Failed to generate AI report: %s", exc)
+            # Continue without AI report - it's optional
+    
+    if ai_report:
+        result["ai_report"] = ai_report
+    else:
+        result["ai_report"] = None
 
     logger.info("Analysis complete score=%s mode=%s ips=%s links=%s attachments=%s", score, mode, len(ips), len(links), len(attachments))
 
