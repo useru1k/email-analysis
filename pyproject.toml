@@ -23,6 +23,7 @@ dependencies = [
   "python-whois",
   "python-dotenv",
   "yara-python",
+  "huggingface_hub",
 ]
 
 [project.optional-dependencies]

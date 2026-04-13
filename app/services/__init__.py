@@ -14,6 +14,7 @@ from .attachment_analysis import flag_attachment_risky, AttachmentRisk, compute_
 from .auth_analysis import parse_auth_results
 from .threat_scoring import compute_threat_score
 from .cache import get_cached_hash, set_cached_hash
+from .llm_analysis import generate_analysis_report
 
 __all__ = [
     "parse_email",
@@ -37,4 +38,5 @@ __all__ = [
     "compute_threat_score",
     "get_cached_hash",
     "set_cached_hash",
+    "generate_analysis_report",
 ]

@@ -100,7 +100,7 @@ body::before {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.8rem;
   margin-bottom: 2rem;
   box-shadow: var(--shadow-card);
   transition: all 0.3s ease;
@@ -437,19 +437,32 @@ body::before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 3rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(0, 255, 136, 0.1);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.results-header .text-center {
+  flex: 1;
+  min-width: 300px;
+}
+
+.results-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.2rem;
 }
 
 .threat-score-card {
   text-align: center;
   background: var(--bg-card);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 2.2rem;
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .threat-score {
@@ -473,9 +486,11 @@ body::before {
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.825rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .threat-badge.safe {
@@ -600,6 +615,19 @@ body::before {
   background: rgba(0, 255, 136, 0.05);
 }
 
+.card h3 {
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.card h3 i {
+  margin-right: 0.5rem;
+  color: var(--primary-color);
+}
+
 /* Status indicators */
 .status-indicator {
   display: inline-block;
@@ -712,4 +740,90 @@ body::before {
   from { opacity: 0; transform: translateX(50px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* AI Report Card Styling */
+.ai-report-card {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.08) 0%, rgba(0, 136, 255, 0.08) 100%);
+  border: 2px solid rgba(0, 255, 136, 0.2);
+  position: relative;
+  overflow: visible;
+}
+
+.ai-report-card::before {
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+.ai-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+}
+
+.ai-report-header h2 {
+  margin: 0 0 0.3rem 0;
+  color: var(--text-primary);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ai-badge {
+  background: rgba(0, 255, 136, 0.12);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: var(--primary-color);
+  padding: 0.25rem 0.7rem;
+  border-radius: 16px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.ai-report-content {
+  margin-bottom: 1rem;
+}
+
+.ai-report-content pre {
+  margin: 0 !important;
+}
+
+.ai-report-footer {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 255, 136, 0.1);
+  text-align: center;
+}
+
+.ai-report-footer small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+/* Unavailable AI Report */
+.ai-report-card.ai-unavailable {
+  background: linear-gradient(135deg, rgba(255, 170, 0, 0.08) 0%, rgba(255, 0, 136, 0.08) 100%);
+  border-color: rgba(255, 170, 0, 0.15);
+}
+
+.ai-report-card.ai-unavailable h2 {
+  color: var(--warning-color);
+}
+
+.ai-report-card.ai-unavailable::before {
+  background: linear-gradient(90deg, var(--warning-color), var(--accent-color));
+}
+
+/* Enhanced AI Report on hover */
+.ai-report-card:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.12) 0%, rgba(0, 136, 255, 0.12) 100%);
+  border-color: rgba(0, 255, 136, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 255, 136, 0.15);
+}
+
 

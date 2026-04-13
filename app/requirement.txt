@@ -13,4 +13,5 @@ python-whois
 # python-magic   # optional: for MIME detection on attachments (libmagic required)
 python-dotenv
 yara-python
+huggingface_hub
 pytest
