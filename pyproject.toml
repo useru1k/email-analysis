@@ -5,7 +5,7 @@ description = "Analyze email messages for threats, attachments, URLs, and IPs."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-  { name = "thebluecapture", email = "you@example.com" }
+  { name = "thebluecapture", email = "" }
 ]
 
 dependencies = [
