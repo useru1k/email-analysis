@@ -65,8 +65,6 @@ An Email Analysis Tool with threat scoring, URL/attachment safety checks, and co
    ```env
    VIRUSTOTAL_API_KEY=your_virustotal_api_key_here
    ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
-   GOOGLE_SEARCH_API_KEY=your_google_search_api_key_here
-   GOOGLE_SEARCH_CX=your_google_custom_search_cx_here
    IPAPI_URL=http://ip-api.com/json/
    ```
    
