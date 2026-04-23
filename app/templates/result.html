@@ -60,8 +60,8 @@
                     <span class="ai-badge">LLM-Generated Report</span>
                 </div>
             </div>
-            <div class="ai-report-content">
-                <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.95rem; line-height: 1.7; background: transparent; padding: 0; border: none; color: var(--text-secondary); margin: 0;">{{ result.ai_report }}</pre>
+            <div class="ai-report-content" id="aiReportContent">
+                {{ result.ai_report }}
             </div>
             <div class="ai-report-footer">
                 <small class="text-muted">
@@ -83,7 +83,8 @@
         </div>
         {% endif %}
 
-        
+        <!-- Email Headers -->
+        <div class="card fade-in slide-in-left">
             <h3><i class="fas fa-envelope"></i> Email Headers</h3>
             <div class="data-table">
                 <table>
@@ -650,6 +651,52 @@
                 console.warn('Chart rendering failed', e);
             }
         });
+
+        // Format AI Report Content
+        function formatAIReport() {
+            const container = document.getElementById('aiReportContent');
+            if (!container) return;
+
+            const text = container.textContent;
+            const lines = text.split('\n');
+            let html = '';
+            let inSection = false;
+
+            for (let line of lines) {
+                // Check for section headers like **Executive Summary**
+                const headerMatch = line.match(/^\*\*(.+?)\*\*/);
+                if (headerMatch) {
+                    if (inSection && html.trim()) {
+                        html += '</div>';
+                    }
+                    const headerText = headerMatch[1];
+                    html += `<div class="report-section"><div class="section-heading">${headerText}</div>`;
+                    inSection = true;
+                } else if (line.trim()) {
+                    // Regular paragraph - convert ** to <strong>
+                    let formattedLine = line
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/&lt;strong&gt;/g, '<strong>')
+                        .replace(/&lt;\/strong&gt;/g, '</strong>');
+                    
+                    html += `<p>${formattedLine}</p>`;
+                } else if (inSection || html) {
+                    html += '<br>';
+                }
+            }
+
+            if (inSection) {
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Format AI report on page load
+        document.addEventListener('DOMContentLoaded', formatAIReport);
     </script>
 </body>
 </html>
