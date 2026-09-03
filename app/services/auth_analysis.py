@@ -88,7 +88,7 @@ def check_spf_record_exists(domain: str) -> bool:
         pass
     return False
 
-
+# checking the dmarc record for the domain
 def check_dmarc_record_exists(domain: str) -> bool:
     """Check if DMARC TXT record exists for _dmarc.domain."""
     try:
