@@ -9,6 +9,7 @@ def compute_threat_score(
     blacklist_hits: List[str],
     attachments: List[Dict[str, Any]],
     links_risky_count: int,
+    headers: Dict[str, Any] | None = None,
 ) -> tuple[int, Dict[str, Any]]:
     """Calculate a 0-100 score along with a human-readable breakdown."""
     score = 0
@@ -67,6 +68,35 @@ def compute_threat_score(
         score += link_points
         details["score_breakdown"]["links"] = link_points
         details["risky_links"] = links_risky_count
+
+    # Reply-To vs From check
+    reply_points = 0
+    try:
+        if headers:
+            from_hdr = headers.get("From", "")
+            reply_hdr = headers.get("Reply-To", "")
+            if from_hdr and reply_hdr:
+                import email.utils
+
+                from_addr = email.utils.parseaddr(from_hdr)[1].lower()
+                reply_to_addr = email.utils.parseaddr(reply_hdr)[1].lower()
+
+                def _domain(addr: str) -> str:
+                    parts = addr.split("@")
+                    return parts[-1].lower() if len(parts) == 2 else ""
+
+                if from_addr and reply_to_addr and from_addr != reply_to_addr:
+                    # heavier penalty if reply-to routes to a different domain
+                    if _domain(from_addr) and _domain(reply_to_addr) and _domain(from_addr) != _domain(reply_to_addr):
+                        reply_points = 20
+                    else:
+                        reply_points = 10
+                    score += reply_points
+                    details["score_breakdown"]["reply_to_mismatch"] = reply_points
+                    details["reply_to_mismatch"] = {"from": from_addr, "reply_to": reply_to_addr}
+    except Exception:
+        # defensive: scoring should not crash on odd headers
+        pass
 
     score = min(100, score)
     return score, details

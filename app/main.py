@@ -193,6 +193,7 @@ async def analyze(
         blacklist_hits,
         attachments,
         risky_link_count,
+        headers,
     )
 
     result = {

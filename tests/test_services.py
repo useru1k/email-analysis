@@ -72,7 +72,8 @@ def test_auth_parse_and_score():
     details = parse_auth_results(msg)
     assert details["spf"] == "pass"
     assert details["dkim"] == "fail"
-    score, breakdown = compute_threat_score(details, ["hit"], [{"risky": True}], 2)
+    hdrs = {"From": "test@example.com", "Reply-To": ""}
+    score, breakdown = compute_threat_score(details, ["hit"], [{"risky": True}], 2, hdrs)
     assert score > 0
     assert "blacklist_hits" in breakdown
 
@@ -80,7 +81,7 @@ def test_auth_parse_and_score():
 def test_threat_score_considers_vt():
     # attachments flagged by VT should increase the score
     vt_blob = {"data": {"attributes": {"last_analysis_stats": {"malicious": 1}}}}
-    score, breakdown = compute_threat_score({}, [], [{"risky": False, "vt": vt_blob, "filename": "bad.exe"}], 0)
+    score, breakdown = compute_threat_score({}, [], [{"risky": False, "vt": vt_blob, "filename": "bad.exe"}], 0, {})
     assert score >= 30
     assert breakdown.get("vt_attachments") == ["bad.exe"]
 

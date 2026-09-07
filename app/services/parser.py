@@ -30,6 +30,8 @@ def extract_basic_headers(msg: email.message.EmailMessage) -> Dict[str, str]:
         "Subject": msg.get("Subject", ""),
         "Date": msg.get("Date", ""),
         "Authentication-Results": msg.get("Authentication-Results", ""),
+        "Reply-To": msg.get("Reply-To", ""),
+        "Return-Path": msg.get("Return-Path", ""),
     }
 
 
