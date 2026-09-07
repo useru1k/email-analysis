@@ -81,6 +81,7 @@ def compute_threat_score(
                 from_addr = email.utils.parseaddr(from_hdr)[1].lower()
                 reply_to_addr = email.utils.parseaddr(reply_hdr)[1].lower()
 
+                # chekcing the domain of the addresses to see if they differ
                 def _domain(addr: str) -> str:
                     parts = addr.split("@")
                     return parts[-1].lower() if len(parts) == 2 else ""
