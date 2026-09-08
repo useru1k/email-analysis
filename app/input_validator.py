@@ -2,7 +2,15 @@
 
 """
 Input validation and sanitization for email content.
-Handles both file uploads and raw text input with security measures.
+
+This module is the first gate in the application flow. Before the system
+analyses an email, it decides whether the user sent a file upload or pasted raw
+content, then validates the input for missing data, unexpected file types,
+unsafe characters, and obvious email-format issues.
+
+The goal is simple: accept only usable email input and reject malformed or
+suspicious requests with a clear HTTP error instead of letting invalid data reach
+later analysis services.
 """
 
 from enum import Enum
@@ -12,15 +20,27 @@ from fastapi import HTTPException
 
 
 class InputMode(str, Enum):
-    """Enum for input source type."""
+    """Represents the source of the email content.
+
+    This enum keeps the rest of the project consistent by labeling the input as
+    either a file upload or raw pasted text. The selected mode is later used to
+    decide which validation path to follow.
+    """
     FILE_UPLOAD = "file"
     RAW_CONTENT = "raw"
 
 
 class InputValidator:
-    """Validates and sanitizes email input from different sources."""
-    
-    # Regex pattern for basic MIME structure detection
+    """Validates and sanitizes email input from different sources.
+
+    The class is intentionally small and focused. Each method handles one piece
+    of the problem: file checks, raw-text checks, payload cleanup, and a basic
+    email-format sanity check. Together they protect the application from empty,
+    invalid, or suspicious inputs before deeper parsing starts.
+    """
+
+    # Regex pattern for basic MIME structure detection.
+    # It looks for common email headers such as From, To, Subject, and Date.
     MIME_PATTERN = re.compile(
         r'^(From:|To:|Subject:|Date:|Message-ID:|MIME-Version:|Content-Type:)',
         re.MULTILINE
@@ -32,48 +52,62 @@ class InputValidator:
     
     @staticmethod
     def validate_file_input(filename: str | None, data: bytes) -> Tuple[str, str]:
-        """
-        Validate file upload.
-        
+        """Validate and decode an uploaded .eml file.
+
+        This is the file-based input path. The method first checks that a real
+        file name exists, confirms the extension is .eml, and ensures the payload
+        is not empty or too large. Once the file passes the structural checks, it
+        decodes the raw bytes back into text so the rest of the email analysis
+        pipeline can process it.
+
+        Workflow:
+        1. Reject missing or invalid file names.
+        2. Enforce the .eml-only rule.
+        3. Block oversized and empty uploads.
+        4. Decode the raw data using UTF-8 first, then a fallback encoding.
+        5. Return the source type and readable email content.
+
         Args:
-            filename: The uploaded file name
-            data: Raw file content bytes
-            
+            filename: The uploaded file name from the client.
+            data: The raw file content as bytes.
+
         Returns:
-            Tuple of (InputMode.FILE_UPLOAD, decoded_content)
-            
+            A tuple containing the input mode and the decoded email text.
+
         Raises:
-            HTTPException: If validation fails
+            HTTPException: If the file is missing, invalid, too large, empty, or
+                cannot be decoded into usable text.
         """
-        # Check if filename exists and is valid
+        # A file upload is only valid if the browser actually provides a name.
         if not filename:
             raise HTTPException(
                 status_code=400,
                 detail="File name missing. Please select a valid .eml file."
             )
-        
-        # Validate extension
+
+        # Accept only email files to reduce accidental misuse.
         if not filename.lower().endswith('.eml'):
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid file extension. Only .eml files are allowed. Got: {filename.split('.')[-1]}"
             )
-        
-        # Check file size
+
+        # Prevent excessive memory usage from very large uploaded files.
         if len(data) > InputValidator.MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=413,
                 detail=f"File too large. Maximum size is {InputValidator.MAX_FILE_SIZE / 1024 / 1024:.1f}MB"
             )
-        
-        # Check for empty files
+
+        # Empty uploads do not contain any email data.
         if len(data) == 0:
             raise HTTPException(
                 status_code=400,
                 detail="Uploaded file is empty."
             )
-        
-        # Decode content with fallback encoding
+
+        # Decode the binary payload into a readable string. This keeps the app
+        # resilient to slightly non-standard email encodings.
         try:
             content = data.decode("utf-8", errors="replace")
         except Exception:
@@ -84,82 +118,110 @@ class InputValidator:
                     status_code=400,
                     detail="Failed to decode file content. Ensure it's a valid email file."
                 ) from e
-        
+
         return InputMode.FILE_UPLOAD, content
     
     @staticmethod
     def validate_raw_content(content: str) -> Tuple[str, str]:
-        """
-        Validate raw email content with security checks.
-        
+        """Validate and clean pasted email text.
+
+        This method is used when the user pastes the email as plain text instead of
+        uploading a file. It trims the content, rejects empty or oversized input,
+        sanitizes suspicious characters, and then performs a light heuristic
+        check to confirm it still resembles a real email message.
+
+        The key idea is to keep the workflow simple: if the pasted text does not
+        look like an email at all, the request is rejected early before the rest
+        of the system tries to parse it.
+
         Args:
-            content: Raw email text content
-            
+            content: The raw email body or full message pasted by the user.
+
         Returns:
-            Tuple of (InputMode.RAW_CONTENT, validated_sanitized_content)
-            
+            A tuple containing the input mode and the cleaned email text.
+
         Raises:
-            HTTPException: If validation fails
+            HTTPException: If the input is empty, oversized, suspicious, or does
+                not look like an email.
         """
-        # Strip whitespace
+        # Strip leading and trailing spaces so accidental whitespace does not
+        # count as valid content.
         content = content.strip()
-        
-        # Check for empty content
+
+        # Empty text is not a valid email payload.
         if not content:
             raise HTTPException(
                 status_code=400,
                 detail="Please paste email content. Text area is empty."
             )
-        
-        # Check size limit
+
+        # Prevent extremely large raw text from being processed.
         if len(content) > InputValidator.MAX_RAW_TEXT_SIZE:
             raise HTTPException(
                 status_code=413,
                 detail=f"Content too large. Maximum size is {InputValidator.MAX_RAW_TEXT_SIZE / 1024 / 1024:.1f}MB"
             )
-        
-        # Sanitize for script injection (but preserve email headers/body)
+
+        # Remove dangerous control characters while preserving the actual email
+        # structure and message body.
         sanitized = InputValidator._sanitize_content(content)
-        
-        # Basic validation that it looks like email content
+
+        # This is a cheap but useful quality gate: a real email normally contains
+        # standard headers such as From, To, Subject, or Date.
         if not InputValidator._looks_like_email(sanitized):
             raise HTTPException(
                 status_code=400,
                 detail="Content doesn't appear to be valid email format. "
                        "Expected standard email headers (From:, To:, Subject:, etc.)"
             )
-        
+
         return InputMode.RAW_CONTENT, sanitized
     
     @staticmethod
     def _sanitize_content(content: str) -> str:
-        """
-        Sanitize raw email content against common injection attacks.
-        
-        Preserves email structure while removing potentially dangerous patterns.
+        """Clean out unsafe control characters from raw email text.
+
+        This helper is intentionally conservative. It keeps normal text and tabs,
+        but strips ASCII control characters that can be used for embedded
+        injection tricks or malformed payloads. This helps protect later parsing
+        logic without changing the visible email content too aggressively.
+
+        Args:
+            content: The original raw text as entered by the user.
+
+        Returns:
+            A cleaned string safe enough for downstream email analysis.
         """
         lines = content.split('\n')
         cleaned_lines = []
-        
+
         for line in lines:
-            # Remove control characters except standard whitespace
-            # This prevents null byte injection and other control char exploits
+            # Remove characters below a standard printable space while allowing
+            # tabs. This blocks null-byte and control-character injection.
             clean_line = ''.join(
                 char for char in line
                 if ord(char) >= 32 or char in '\t'
             )
             cleaned_lines.append(clean_line)
-        
+
         return '\n'.join(cleaned_lines)
     
     @staticmethod
     def _looks_like_email(content: str) -> bool:
+        """Run a quick header-based sanity check.
+
+        This is not a full email parser; it is only a lightweight guardrail. If
+        the content contains one of the usual headers such as From, To, Subject,
+        or Date, it is likely an actual email message and can continue through the
+        pipeline. If not, something is probably wrong with the input.
+
+        Args:
+            content: The cleaned email text to inspect.
+
+        Returns:
+            True when the text contains a recognizable email header pattern.
         """
-        Perform basic heuristic check that content looks like email.
-        
-        Returns True if content has typical email headers.
-        """
-        # Check for at least one common email header
+        # This is a fast heuristic rather than a full MIME validation step.
         return bool(InputValidator.MIME_PATTERN.search(content))
 
 
@@ -169,41 +231,48 @@ def get_input_source(
     file_data: bytes | None,
     raw_text: str,
 ) -> Tuple[InputMode, str]:
-    """
-    Determine input source and validate accordingly.
-    
-    This is the main entry point for input validation.
-    
+    """Entry point that decides which validation path to use.
+
+    This function acts like a dispatcher. It checks whether the user submitted a
+    file upload, raw pasted text, or neither, and then delegates to the correct
+    validation method. It also prevents ambiguous requests where both inputs are
+    received at the same time.
+
+    In plain English: the app asks, "Did the user send a file or paste text?"
+    and then validates exactly one of those inputs before the analysis begins.
+
     Args:
-        has_file: Whether a file was actually uploaded
-        filename: File name if provided
-        file_data: File bytes if provided
-        raw_text: Raw text content if provided
-        
+        has_file: True when a file upload is present.
+        filename: The uploaded filename, if any.
+        file_data: The uploaded file bytes, if any.
+        raw_text: The pasted email text, if any.
+
     Returns:
-        Tuple of (InputMode, validated_content)
-        
+        A tuple of the detected input mode and the cleaned content ready for
+        later parsing and analysis.
+
     Raises:
-        HTTPException: If both or neither input is provided, or validation fails
+        HTTPException: If both inputs are provided, neither is provided, or the
+            selected input fails validation.
     """
-    
-    # Determine which input was provided
+
+    # Determine if the user actually provided any pasted text.
     has_raw_text = raw_text.strip() != ""
-    
-    # Reject if both or neither provided
+
+    # The app should accept exactly one input source at a time.
     if has_file and has_raw_text:
         raise HTTPException(
             status_code=400,
             detail="Please provide either a file OR raw content, not both. Choose one input method."
         )
-    
+
     if not has_file and not has_raw_text:
         raise HTTPException(
             status_code=400,
             detail="Please either upload an .eml file or paste raw email content."
         )
-    
-    # Process based on which was provided
+
+    # Route the request to the correct validator.
     if has_file:
         if not file_data:
             raise HTTPException(
