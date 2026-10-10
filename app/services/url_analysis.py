@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
+import asyncio
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -13,6 +14,7 @@ from ..config import Settings
 logger = logging.getLogger(__name__)
 
 SHORTENER_DOMAINS = {"bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly"}
+_TLD_EXTRACT = tldextract.TLDExtract(suffix_list_urls=())
 
 URL_REGEX = re.compile(r"https?://[^\s'\"<>]+")
 
@@ -23,7 +25,7 @@ def extract_urls_from_text(text: str) -> List[str]:
 
 def is_shortened(url: str) -> bool:
     try:
-        parsed = tldextract.extract(url)
+        parsed = _TLD_EXTRACT(url)
         dom = f"{parsed.domain}.{parsed.suffix}" if parsed.suffix else parsed.domain
         return dom.lower() in SHORTENER_DOMAINS
     except Exception:
@@ -76,7 +78,7 @@ async def virustotal_url_check(url: str, settings: Settings) -> Optional[Dict[st
     return None
 
 
-async def domain_intelligence(url: str) -> Dict[str, Any]:
+def _domain_intelligence_sync(url: str) -> Dict[str, Any]:
     """Gather simple domain intelligence (WHOIS, DNS records).
 
     This is kept lightweight: failures return empty dict, allowing offline
@@ -85,7 +87,7 @@ async def domain_intelligence(url: str) -> Dict[str, Any]:
     intel: Dict[str, Any] = {"domain": None, "whois": None, "dns": {}}
     try:
         # extract domain
-        parsed = tldextract.extract(url)
+        parsed = _TLD_EXTRACT(url)
         domain = f"{parsed.domain}.{parsed.suffix}" if parsed.suffix else parsed.domain
         intel["domain"] = domain
         # WHOIS lookup (synchronous for simplicity)
@@ -101,15 +103,24 @@ async def domain_intelligence(url: str) -> Dict[str, Any]:
         # DNS records
         try:
             import dns.resolver
-            answers = dns.resolver.resolve(domain, "MX")
+            answers = dns.resolver.resolve(domain, "MX", lifetime=2.0)
             intel["dns"]["mx"] = [str(r.exchange) for r in answers]
         except Exception:
             intel["dns"]["mx"] = []
         try:
-            answers = dns.resolver.resolve(domain, "SOA")
+            answers = dns.resolver.resolve(domain, "SOA", lifetime=2.0)
             intel["dns"]["soa"] = [str(r) for r in answers]
         except Exception:
             intel["dns"]["soa"] = []
     except Exception:
         pass
     return intel
+
+
+async def domain_intelligence(url: str) -> Dict[str, Any]:
+    """Run domain intelligence without blocking the async request loop."""
+    try:
+        return await asyncio.to_thread(_domain_intelligence_sync, url)
+    except Exception as exc:
+        logger.debug("Domain intelligence failed for %s: %s", url, exc)
+        return {"domain": None, "whois": None, "dns": {}}

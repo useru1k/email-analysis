@@ -77,5 +77,11 @@ async def check_ips(
     for idx, ip in enumerate(ips):
         geo = responses[2 * idx] if 2 * idx < len(responses) else {"status": "fail"}
         abuse = responses[2 * idx + 1] if 2 * idx + 1 < len(responses) else None
+        if isinstance(geo, Exception):
+            logger.debug("IP geolocation task failed for %s: %s", ip, geo)
+            geo = {"status": "fail"}
+        if isinstance(abuse, Exception):
+            logger.debug("AbuseIPDB task failed for %s: %s", ip, abuse)
+            abuse = None
         results.append({"ip": ip, "geo": geo, "abuse": abuse})
     return results

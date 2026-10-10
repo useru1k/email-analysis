@@ -43,7 +43,7 @@
                 <p class="text-muted mb-2">Analysis Mode: <strong>{{ result.mode.upper() }}</strong></p>
                 <div class="progress" style="height: 8px; background: var(--bg-darker); border-radius: 4px; overflow: hidden;">
                     <div class="progress-bar" style="
-                        width: {{ result.threat_score }}%; 
+                        width: {{ result.threat_score }}%;
                         background: {{ 'var(--success-color)' if result.threat_score <= 30 else 'var(--warning-color)' if result.threat_score <= 60 else 'var(--danger-color)' }};
                         transition: width 2s ease-in-out;
                     "></div>
@@ -176,14 +176,14 @@
                         <tr>
                             <td><strong>{{ loop.index }}</strong></td>
                             <td style="max-width: 300px;">
-                                <a href="{{ l.original }}" target="_blank" 
+                                <a href="{{ l.original }}" target="_blank"
                                    style="color: var(--primary-color); text-decoration: none; word-wrap: break-word; word-break: break-all; display: block;"
                                    title="{{ l.original }}">
                                     {{ l.original }}
                                 </a>
                             </td>
                             <td style="max-width: 300px;">
-                                <a href="{{ l.final }}" target="_blank" 
+                                <a href="{{ l.final }}" target="_blank"
                                    style="color: var(--secondary-color); text-decoration: none; word-wrap: break-word; word-break: break-all; display: block;"
                                    title="{{ l.final }}">
                                     {{ l.final }}
@@ -257,7 +257,7 @@
                             </td>
                             <td>
                                 {% if a.vt %}
-                                    <span class="text-muted">{{ a.vt.data.attributes.last_analysis_stats.malicious + a.vt.data.attributes.last_analysis_stats.suspicious }} hits</span>
+                                    <span class="text-muted">{{ a.vt_hits|default(0, true) }} hits</span>
                                 {% else %}
                                     <span class="text-muted">n/a</span>
                                 {% endif %}
@@ -480,7 +480,7 @@
                 link.style.transform = 'scale(1.05)';
                 link.style.transition = 'transform 0.2s ease';
             });
-            
+
             link.addEventListener('mouseleave', () => {
                 link.style.transform = 'scale(1)';
             });

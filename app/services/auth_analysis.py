@@ -9,7 +9,10 @@ import dns.resolver
 logger = logging.getLogger(__name__)
 
 
-def parse_auth_results(msg: email.message.EmailMessage) -> Dict[str, str]:
+def parse_auth_results(
+    msg: email.message.EmailMessage,
+    perform_dns_checks: bool = True,
+) -> Dict[str, str]:
     """Parse the Authentication-Results header and return a simple dict.
 
     If Authentication-Results is missing or incomplete, perform DNS lookups
@@ -19,7 +22,7 @@ def parse_auth_results(msg: email.message.EmailMessage) -> Dict[str, str]:
     """
     details: Dict[str, str] = {}
     auth_results = msg.get("Authentication-Results", "").lower()
-    
+
     # Parse from header if present
     if "spf=" in auth_results:
         if "spf=pass" in auth_results:
@@ -28,6 +31,8 @@ def parse_auth_results(msg: email.message.EmailMessage) -> Dict[str, str]:
             details["spf"] = "fail"
         elif "spf=neutral" in auth_results or "spf=softfail" in auth_results:
             details["spf"] = "softfail"
+        elif "spf=none" in auth_results:
+            details["spf"] = "none"
     if "dkim=" in auth_results:
         if "dkim=pass" in auth_results:
             details["dkim"] = "pass"
@@ -38,7 +43,14 @@ def parse_auth_results(msg: email.message.EmailMessage) -> Dict[str, str]:
             details["dmarc"] = "pass"
         elif "dmarc=fail" in auth_results:
             details["dmarc"] = "fail"
-    
+        elif "dmarc=none" in auth_results:
+            details["dmarc"] = "none"
+
+    # DNS is optional because it is external, blocking work.  In particular,
+    # offline analysis must never perform a network lookup.
+    if not perform_dns_checks:
+        return details
+
     # If missing, try DNS checks
     if "spf" not in details:
         domain = get_sender_domain(msg)
@@ -47,14 +59,14 @@ def parse_auth_results(msg: email.message.EmailMessage) -> Dict[str, str]:
                 details["spf"] = "configured"  # record exists, assume configured
             else:
                 details["spf"] = "missing"
-    
+
     if "dkim" not in details:
         # Simple check: if DKIM-Signature header exists, assume pass
         if msg.get("DKIM-Signature"):
             details["dkim"] = "present"
         else:
             details["dkim"] = "missing"
-    
+
     if "dmarc" not in details:
         domain = get_sender_domain(msg)
         if domain:
@@ -62,7 +74,7 @@ def parse_auth_results(msg: email.message.EmailMessage) -> Dict[str, str]:
                 details["dmarc"] = "configured"
             else:
                 details["dmarc"] = "missing"
-    
+
     return details
 
 
@@ -79,24 +91,28 @@ def get_sender_domain(msg: email.message.EmailMessage) -> str | None:
 def check_spf_record_exists(domain: str) -> bool:
     """Check if SPF TXT record exists for the domain."""
     try:
-        answers = dns.resolver.resolve(domain, 'TXT')
+        answers = dns.resolver.resolve(domain, 'TXT', lifetime=2.0)
         for rdata in answers:
             txt = str(rdata).strip('"')
             if txt.startswith('v=spf1'):
                 return True
-    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.exception.Timeout):
-        pass
+    except dns.exception.DNSException as exc:
+        logger.debug("SPF lookup failed for %s: %s", domain, exc)
+    except OSError as exc:
+        logger.debug("SPF lookup failed for %s: %s", domain, exc)
     return False
 
-# checking the dmarc record for the domain of the system 
+# checking the dmarc record for the domain of the system
 def check_dmarc_record_exists(domain: str) -> bool:
     """Check if DMARC TXT record exists for _dmarc.domain."""
     try:
-        answers = dns.resolver.resolve(f"_dmarc.{domain}", 'TXT')
+        answers = dns.resolver.resolve(f"_dmarc.{domain}", 'TXT', lifetime=2.0)
         for rdata in answers:
             txt = str(rdata).strip('"')
             if txt.startswith('v=DMARC1'):
                 return True
-    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.exception.Timeout):
-        pass
+    except dns.exception.DNSException as exc:
+        logger.debug("DMARC lookup failed for %s: %s", domain, exc)
+    except OSError as exc:
+        logger.debug("DMARC lookup failed for %s: %s", domain, exc)
     return False

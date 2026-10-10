@@ -45,13 +45,17 @@ class InputValidator:
         r'^(From:|To:|Subject:|Date:|Message-ID:|MIME-Version:|Content-Type:)',
         re.MULTILINE
     )
-    
+
     # Max sizes
     MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
     MAX_RAW_TEXT_SIZE = 100 * 1024 * 1024  # 100MB
-    
+
     @staticmethod
-    def validate_file_input(filename: str | None, data: bytes) -> Tuple[str, str]:
+    def validate_file_input(
+        filename: str | None,
+        data: bytes,
+        max_file_size: int | None = None,
+    ) -> Tuple[str, str]:
         """Validate and decode an uploaded .eml file.
 
         This is the file-based input path. The method first checks that a real
@@ -93,10 +97,16 @@ class InputValidator:
             )
 
         # Prevent excessive memory usage from very large uploaded files.
-        if len(data) > InputValidator.MAX_FILE_SIZE:
+        effective_max_size = (
+            InputValidator.MAX_FILE_SIZE if max_file_size is None else max_file_size
+        )
+        if effective_max_size <= 0:
+            raise HTTPException(status_code=500, detail="File upload limit is not configured correctly.")
+
+        if len(data) > effective_max_size:
             raise HTTPException(
                 status_code=413,
-                detail=f"File too large. Maximum size is {InputValidator.MAX_FILE_SIZE / 1024 / 1024:.1f}MB"
+                detail=f"File too large. Maximum size is {effective_max_size / 1024 / 1024:.1f}MB"
             )
 
         # Empty uploads do not contain any email data.
@@ -120,7 +130,7 @@ class InputValidator:
                 ) from e
 
         return InputMode.FILE_UPLOAD, content
-    
+
     @staticmethod
     def validate_raw_content(content: str) -> Tuple[str, str]:
         """Validate and clean pasted email text.
@@ -176,7 +186,7 @@ class InputValidator:
             )
 
         return InputMode.RAW_CONTENT, sanitized
-    
+
     @staticmethod
     def _sanitize_content(content: str) -> str:
         """Clean out unsafe control characters from raw email text.
@@ -205,7 +215,7 @@ class InputValidator:
             cleaned_lines.append(clean_line)
 
         return '\n'.join(cleaned_lines)
-    
+
     @staticmethod
     def _looks_like_email(content: str) -> bool:
         """Run a quick header-based sanity check.
@@ -230,6 +240,7 @@ def get_input_source(
     filename: str | None,
     file_data: bytes | None,
     raw_text: str,
+    max_file_size: int | None = None,
 ) -> Tuple[InputMode, str]:
     """Entry point that decides which validation path to use.
 
@@ -279,6 +290,6 @@ def get_input_source(
                 status_code=400,
                 detail="File selected but content is empty."
             )
-        return InputValidator.validate_file_input(filename, file_data)
+        return InputValidator.validate_file_input(filename, file_data, max_file_size=max_file_size)
     else:
         return InputValidator.validate_raw_content(raw_text)

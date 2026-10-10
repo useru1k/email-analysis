@@ -52,9 +52,22 @@ def compute_threat_score(
     for a in attachments:
         vt = a.get("vt")
         if vt and isinstance(vt, dict):
-            stats = vt.get("data", {}).get("attributes", {}).get("last_analysis_stats", {})
+            data = vt.get("data", {})
+            attributes = data.get("attributes", {}) if isinstance(data, dict) else {}
+            stats = (
+                attributes.get("last_analysis_stats", {})
+                if isinstance(attributes, dict)
+                else {}
+            )
+            if not isinstance(stats, dict):
+                stats = {}
             # count any positive or suspicious hits as a red flag
-            if stats.get("malicious", 0) > 0 or stats.get("suspicious", 0) > 0:
+            try:
+                is_malicious = int(stats.get("malicious", 0) or 0) > 0
+                is_suspicious = int(stats.get("suspicious", 0) or 0) > 0
+            except (TypeError, ValueError):
+                is_malicious = is_suspicious = False
+            if is_malicious or is_suspicious:
                 vt_malicious.append(a.get("filename"))
     if vt_malicious:
         # significant penalty for attachments that VT has detected

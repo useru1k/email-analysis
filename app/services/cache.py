@@ -22,11 +22,12 @@ logger = logging.getLogger(__name__)
 _lock = Lock()
 _cache: Dict[str, Any] = {}
 _cache_loaded = False
+_cache_path: str | None = None
 
 
 def _load_cache(path: str) -> None:
-    global _cache, _cache_loaded
-    if _cache_loaded:
+    global _cache, _cache_loaded, _cache_path
+    if _cache_loaded and _cache_path == path:
         return
     try:
         p = Path(path)
@@ -39,6 +40,7 @@ def _load_cache(path: str) -> None:
         logger.warning("Failed to load cache from %s: %s", path, exc)
         _cache = {}
     _cache_loaded = True
+    _cache_path = path
 
 
 def _save_cache(path: str) -> None:

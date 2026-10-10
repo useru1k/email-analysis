@@ -89,7 +89,7 @@ from ..services.attachment_analysis import compute_sha256, flag_attachment_risky
 
 
 def extract_attachments(msg: email.message.EmailMessage) -> List[Dict]:
-    """Return metadata about attachments in the message.  
+    """Return metadata about attachments in the message.
 
     Adds SHA-256 and a risk flag so callers don't need to do second passes.
     A ``vt`` key is included for later VirusTotal lookup results.
@@ -110,6 +110,7 @@ def extract_attachments(msg: email.message.EmailMessage) -> List[Dict]:
                 "risky": flag_attachment_risky(ext, part.get_content_type()),
                 # placeholder for VirusTotal result
                 "vt": None,
+                "vt_hits": 0,
             })
     return attachments
 
