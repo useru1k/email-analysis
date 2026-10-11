@@ -120,6 +120,9 @@
                             <td><strong>{{ loop.index }}</strong></td>
                             <td>
                                 <code style="background: var(--bg-darker); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ hop.ip }}</code>
+                                {% if hop.geo.ip_family %}
+                                    <small class="text-muted" style="display:block; margin-top:0.35rem;">{{ hop.geo.ip_family }} · {{ hop.geo.scope }}</small>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if hop.geo.status == 'success' %}
@@ -128,6 +131,12 @@
                                 {% elif hop.geo.status == 'offline' %}
                                     <span class="status-indicator muted"></span>
                                     <span class="text-muted">Offline mode</span>
+                                {% elif hop.geo.status == 'local' %}
+                                    <span class="status-indicator muted"></span>
+                                    <span class="text-muted">{{ hop.geo.message }}</span>
+                                {% elif hop.geo.status == 'invalid' %}
+                                    <span class="status-indicator danger"></span>
+                                    <span class="text-muted">Invalid IP address</span>
                                 {% else %}
                                     <span class="status-indicator danger"></span>
                                     <span class="text-muted">Lookup failed</span>
@@ -143,6 +152,10 @@
                             <td>
                                 {% if hop.geo.status == 'success' %}
                                     <span class="threat-badge safe">OK</span>
+                                {% elif hop.geo.status == 'local' %}
+                                    <span class="threat-badge safe">LOCAL</span>
+                                {% elif hop.geo.status == 'invalid' %}
+                                    <span class="threat-badge suspicious">INVALID</span>
                                 {% else %}
                                     <span class="threat-badge suspicious">UNKNOWN</span>
                                 {% endif %}

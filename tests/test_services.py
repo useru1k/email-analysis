@@ -21,6 +21,7 @@ from app.services import (
     search_malware_reports,
     get_cached_hash,
     set_cached_hash,
+    classify_ip,
 )
 
 SAMPLE_EML = """From: test@example.com
@@ -200,3 +201,18 @@ def test_ip_extraction():
     assert "::1" in ips
     assert all(len(ip) > 1 for ip in ips)  # no single-letter tokens
     assert ips.count("123.45.67.89") == 1
+
+
+def test_ip_classification_handles_ipv4_ipv6_and_local_addresses():
+    ipv6 = classify_ip("[::1]")
+    assert ipv6["valid"] is True
+    assert ipv6["ip"] == "::1"
+    assert ipv6["ip_family"] == "IPv6"
+    assert ipv6["scope"] == "loopback"
+    assert ipv6["is_global"] is False
+
+    ipv4 = classify_ip("8.8.8.8")
+    assert ipv4["valid"] is True
+    assert ipv4["ip_family"] == "IPv4"
+    assert ipv4["scope"] == "public"
+    assert ipv4["is_global"] is True

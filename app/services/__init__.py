@@ -7,7 +7,7 @@ makes unit testing easier.
 """
 
 from .parser import parse_email, extract_basic_headers, extract_received_ips, extract_links_from_body, extract_attachments, check_header_issues
-from .ip_analysis import geolocate_ip, abuseipdb_check, check_ips
+from .ip_analysis import classify_ip, geolocate_ip, abuseipdb_check, check_ips
 from .url_analysis import is_shortened, expand_short_url, virustotal_url_check, extract_urls_from_text, domain_intelligence
 from .attachment_analysis import virustotal_file_check, search_malware_reports
 from .attachment_analysis import flag_attachment_risky, AttachmentRisk, compute_sha256
@@ -25,6 +25,7 @@ __all__ = [
     "virustotal_file_check",
     "search_malware_reports",
     "geolocate_ip",
+    "classify_ip",
     "abuseipdb_check",
     "check_ips",
     "is_shortened",
